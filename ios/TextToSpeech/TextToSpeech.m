@@ -18,6 +18,11 @@
 
 RCT_EXPORT_MODULE()
 
+-(NSArray<NSString *> *)supportedEvents
+{
+    return @[@"tts"];
+}
+
 -(instancetype)init
 {
     self = [super init];
@@ -65,32 +70,32 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didStartSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"TextToSpeech" body:@{@"type": @"started", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"tts" body:@{@"type": @"started", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didFinishSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"TextToSpeech" body:@{@"type": @"finished", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"tts" body:@{@"type": @"finished", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didPauseSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"TextToSpeech" body:@{@"type": @"paused", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"tts" body:@{@"type": @"paused", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didContinueSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"TextToSpeech" body:@{@"type": @"resumed", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"tts" body:@{@"type": @"resumed", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer willSpeakRangeOfSpeechString:(NSRange)characterRange utterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"TextToSpeech" body:@{@"type": @"speaking", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"tts" body:@{@"type": @"speaking", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didCancelSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"TextToSpeech" body:@{@"type": @"cancelled", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"tts" body:@{@"type": @"cancelled", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 @end
