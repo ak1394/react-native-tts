@@ -20,7 +20,7 @@ RCT_EXPORT_MODULE()
 
 -(NSArray<NSString *> *)supportedEvents
 {
-    return @[@"tts"];
+    return @[@"started", @"finished", @"paused", @"resumed", @"speaking", @"cancelled"];
 }
 
 -(instancetype)init
@@ -58,6 +58,39 @@ RCT_EXPORT_METHOD(speak:(NSDictionary *)args
     resolve([NSNumber numberWithUnsignedLong:utterance.hash]);
 }
 
+RCT_EXPORT_METHOD(stop:(BOOL *)immediately resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+{
+    AVSpeechBoundary *boundary;
+    if(!immediately) {
+        boundary = AVSpeechBoundaryWord;
+    } else {
+        boundary = AVSpeechBoundaryImmediate;
+    }
+    BOOL *stopped = [self.synthesizer stopSpeakingAtBoundary:boundary];
+
+    resolve([NSNumber numberWithBool:stopped]);
+}
+
+RCT_EXPORT_METHOD(pause:(BOOL *)immediately resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+{
+    AVSpeechBoundary *boundary;
+    if(!immediately) {
+        boundary = AVSpeechBoundaryWord;
+    } else {
+        boundary = AVSpeechBoundaryImmediate;
+    }
+    BOOL *paused = [self.synthesizer pauseSpeakingAtBoundary:boundary];
+
+    resolve([NSNumber numberWithBool:paused]);
+}
+
+RCT_EXPORT_METHOD(resume:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+{
+    BOOL *continued = [self.synthesizer continueSpeaking];
+
+    resolve([NSNumber numberWithBool:continued]);
+}
+
 RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
@@ -70,32 +103,35 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didStartSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"tts" body:@{@"type": @"started", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"started" body:[NSNumber numberWithUnsignedLong:utterance.hash]];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didFinishSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"tts" body:@{@"type": @"finished", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"finished" body:[NSNumber numberWithUnsignedLong:utterance.hash]];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didPauseSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"tts" body:@{@"type": @"paused", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"paused" body:[NSNumber numberWithUnsignedLong:utterance.hash]];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didContinueSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"tts" body:@{@"type": @"resumed", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"resumed" body:[NSNumber numberWithUnsignedLong:utterance.hash]];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer willSpeakRangeOfSpeechString:(NSRange)characterRange utterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"tts" body:@{@"type": @"speaking", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"speaking"
+                       body:@{@"location": [NSNumber numberWithUnsignedLong:characterRange.location],
+                              @"length": [NSNumber numberWithUnsignedLong:characterRange.length],
+                              @"utterance": [NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didCancelSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [self sendEventWithName:@"tts" body:@{@"type": @"cancelled", @"id": [NSNumber numberWithUnsignedLong:utterance.hash]}];
+    [self sendEventWithName:@"cancelled" body:[NSNumber numberWithUnsignedLong:utterance.hash]];
 }
 
 @end
