@@ -1,21 +1,41 @@
-import { NativeModules, NativeAppEventEmitter } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 
-export function speak(text, lang) {
-  return NativeModules.TextToSpeech.speak({text: text, language: lang});
+export function set_default_voice(voiceId) {
+  return NativeModules.TextToSpeech.setDefaultVoice(voiceId);
 }
 
-export function stop(immediately) {
-  return NativeModules.TextToSpeech.stop(immediately);
-}
-
-export function pause(immediately) {
-  return NativeModules.TextToSpeech.pause(immediately);
-}
-
-export function resume() {
-  return NativeModules.TextToSpeech.resume();
+export function set_default_language(language) {
+  return NativeModules.TextToSpeech.setDefaultLanguage(language);
 }
 
 export function voices() {
   return NativeModules.TextToSpeech.voices();
+}
+
+export function speak(utterance, voiceId) {
+  if(Platform.OS === 'ios') {
+    return NativeModules.TextToSpeech.speak(utterance, voiceId);
+  } else {
+    return NativeModules.TextToSpeech.speak(utterance)
+  }
+}
+
+export function stop(immediately) {
+  if(Platform.OS === 'ios') {
+    return NativeModules.TextToSpeech.stop(!!immediately);
+  } else {
+    return NativeModules.TextToSpeech.stop();
+  }
+}
+
+export function pause(immediately) {
+  if(Platform.OS === 'ios') {
+    return NativeModules.TextToSpeech.pause(!immediately);
+  }
+}
+
+export function resume() {
+  if(Platform.OS === 'ios') {
+    return NativeModules.TextToSpeech.resume();
+  }
 }
