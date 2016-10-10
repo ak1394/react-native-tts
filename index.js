@@ -20,9 +20,9 @@ export function speak(utterance, voiceId) {
   }
 }
 
-export function stop(immediately) {
+export function stop(onWordBoundary) {
   if(Platform.OS === 'ios') {
-    return NativeModules.TextToSpeech.stop(!!immediately);
+    return NativeModules.TextToSpeech.stop(onWordBoundary);
   } else {
     return NativeModules.TextToSpeech.stop();
   }

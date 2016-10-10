@@ -56,11 +56,11 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     resolve([NSNumber numberWithUnsignedLong:utterance.hash]);
 }
 
-RCT_EXPORT_METHOD(stop:(BOOL *)immediately resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary *boundary;
     
-    if(!immediately) {
+    if(onWordBoundary) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;
@@ -71,11 +71,11 @@ RCT_EXPORT_METHOD(stop:(BOOL *)immediately resolve:(RCTPromiseResolveBlock)resol
     resolve([NSNumber numberWithBool:stopped]);
 }
 
-RCT_EXPORT_METHOD(pause:(BOOL *)immediately resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(pause:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary *boundary;
     
-    if(!immediately) {
+    if(onWordBoundary) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;
