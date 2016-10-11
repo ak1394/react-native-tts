@@ -28,9 +28,9 @@ export function stop(onWordBoundary) {
   }
 }
 
-export function pause(immediately) {
+export function pause(onWordBoundary) {
   if(Platform.OS === 'ios') {
-    return NativeModules.TextToSpeech.pause(!immediately);
+    return NativeModules.TextToSpeech.pause(onWordBoundary);
   }
 }
 
