@@ -132,6 +132,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 WritableMap voiceMap = Arguments.createMap();
                 voiceMap.putString("id", voice.getName());
                 voiceMap.putString("name", voice.getName());
+                voiceMap.putString("language", voice.getLocale().toLanguageTag());
                 voiceArray.pushMap(voiceMap);
             }
         }
