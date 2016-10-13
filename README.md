@@ -1,6 +1,6 @@
 # React Native TTS
 
-React Native TTS is a text-to-speech library for [React Native](https://facebook.github.io/react-native/) for iOS and Android.
+React Native TTS is a text-to-speech library for [React Native](https://facebook.github.io/react-native/) on iOS and Android.
 
 ## Documentation
 
@@ -77,7 +77,7 @@ tts.set_default_voice('com.apple.ttsbundle.Moira-compact')
 const ee = new NativeEventEmitter(NativeModules.TextToSpeech);
 ee.addListener('tts-start', (utteranceId) => console.log("start", utteranceId));
 ee.addListener('tts-finish', (utteranceId) => console.log("finish", utteranceId));
-ee.addListener('tts-finish', (utteranceId) => console.log("cancel", utteranceId));
+ee.addListener('tts-cancel', (utteranceId) => console.log("cancel", utteranceId));
 ```
 
 ## License
