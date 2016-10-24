@@ -20,10 +20,7 @@ react-native link
 ### Imports
 
 ```js
-import * as tts from 'react-native-tts';
-# import these two modules if required to subscribe to TTS events
-import { NativeModules, NativeEventEmitter, } from 'react-native';
-
+import Tts from 'react-native-tts';
 ```
 
 ### Speaking
@@ -31,53 +28,52 @@ import { NativeModules, NativeEventEmitter, } from 'react-native';
 Add utterance to TTS queue and start speaking. Returns promise with utteranceId.
 
 ```js
-tts.speak('Hello, world!');
+Tts.speak('Hello, world!');
 ```
 Stop speaking and flush the TTS queue.
 
 ```js
-tts.stop();
+Tts.stop();
 ```
 
 ### List Voices
 
-List available voices
+List available voices 
 
-```js
-tts.voices().then(voices => console.log(voices));
-```
-Prints 
-
-```js
-[ { id: 'com.apple.ttsbundle.Moira-compact', name: 'Moira', language: 'en-IE' },
-...
-{ id: 'com.apple.ttsbundle.Samantha-compact', name: 'Samantha', language: 'en-US' } ]
-```
 (not available on Android API Level < 21).
+
+```js
+Tts.voices().then(voices => console.log(voices));
+
+// Prints:
+//
+// [ { id: 'com.apple.ttsbundle.Moira-compact', name: 'Moira', language: 'en-IE' },
+// ...
+// { id: 'com.apple.ttsbundle.Samantha-compact', name: 'Samantha', language: 'en-US' } ]
+```
 
 ### Set default Language
 
 ```js
-tts.set_default_language('en-IE')
+Tts.setDefaultLanguage('en-IE');
 ```
 
 ### Set default Voice
 
-Use Voice id as reported by tts.voices()
-
-```js
-tts.set_default_voice('com.apple.ttsbundle.Moira-compact')
-```
+Use Voice id as reported by Tts.voices()
 
 (not available on Android API Level < 21).
+
+```js
+Tts.setDefaultVoice('com.apple.ttsbundle.Moira-compact');
+```
 
 ### Events
 
 ```js
-const ee = new NativeEventEmitter(NativeModules.TextToSpeech);
-ee.addListener('tts-start', (utteranceId) => console.log("start", utteranceId));
-ee.addListener('tts-finish', (utteranceId) => console.log("finish", utteranceId));
-ee.addListener('tts-cancel', (utteranceId) => console.log("cancel", utteranceId));
+Tts.addEventListener('tts-start', (utteranceId) => console.log("start", utteranceId));
+Tts.addEventListener('tts-finish', (utteranceId) => console.log("finish", utteranceId));
+Tts.addEventListener('tts-cancel', (utteranceId) => console.log("cancel", utteranceId));
 ```
 
 ## License

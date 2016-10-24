@@ -1,41 +1,60 @@
-import { NativeModules, Platform } from 'react-native';
+import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 
-export function set_default_voice(voiceId) {
-  return NativeModules.TextToSpeech.setDefaultVoice(voiceId);
-}
+const TextToSpeech = NativeModules.TextToSpeech;
 
-export function set_default_language(language) {
-  return NativeModules.TextToSpeech.setDefaultLanguage(language);
-}
+class Tts extends NativeEventEmitter {
 
-export function voices() {
-  return NativeModules.TextToSpeech.voices();
-}
+  constructor() {
+    super(TextToSpeech);
+  }
 
-export function speak(utterance, voiceId) {
-  if(Platform.OS === 'ios') {
-    return NativeModules.TextToSpeech.speak(utterance, voiceId);
-  } else {
-    return NativeModules.TextToSpeech.speak(utterance)
+  setDefaultVoice(voiceId) {
+    return TextToSpeech.setDefaultVoice(voiceId);
+  }
+
+  setDefaultLanguage(language) {
+    return TextToSpeech.setDefaultLanguage(language);
+  }
+
+  voices() {
+    return TextToSpeech.voices();
+  }
+
+  speak(utterance, voiceId) {
+    if(Platform.OS === 'ios') {
+      return TextToSpeech.speak(utterance, voiceId);
+    } else {
+      return TextToSpeech.speak(utterance)
+    }
+  }
+
+  stop(onWordBoundary) {
+    if(Platform.OS === 'ios') {
+      return TextToSpeech.stop(onWordBoundary);
+    } else {
+      return TextToSpeech.stop();
+    }
+  }
+
+  pause(onWordBoundary) {
+    if(Platform.OS === 'ios') {
+      return TextToSpeech.pause(onWordBoundary);
+    }
+  }
+
+  resume() {
+    if(Platform.OS === 'ios') {
+      return TextToSpeech.resume();
+    }
+  }
+
+  addEventListener(type, handler) {
+    this.addListener(type, handler);
+  }
+
+  removeEventListener(type, handler) {
+    this.removeListener(type, handler);
   }
 }
 
-export function stop(onWordBoundary) {
-  if(Platform.OS === 'ios') {
-    return NativeModules.TextToSpeech.stop(onWordBoundary);
-  } else {
-    return NativeModules.TextToSpeech.stop();
-  }
-}
-
-export function pause(onWordBoundary) {
-  if(Platform.OS === 'ios') {
-    return NativeModules.TextToSpeech.pause(onWordBoundary);
-  }
-}
-
-export function resume() {
-  if(Platform.OS === 'ios') {
-    return NativeModules.TextToSpeech.resume();
-  }
-}
+export default new Tts();
