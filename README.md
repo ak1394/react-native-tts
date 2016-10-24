@@ -38,9 +38,9 @@ Tts.stop();
 
 ### List Voices
 
-List available voices 
+Returns list of available voices 
 
-(not available on Android API Level < 21).
+*(not supported on Android API Level < 21, returns empty list)*
 
 ```js
 Tts.voices().then(voices => console.log(voices));
@@ -60,15 +60,17 @@ Tts.setDefaultLanguage('en-IE');
 
 ### Set default Voice
 
-Use Voice id as reported by Tts.voices()
+Sets default voice, pass one of the voiceId as reported by a call to Tts.voices() 
 
-(not available on Android API Level < 21).
+*(not available on Android API Level < 21)*
 
 ```js
 Tts.setDefaultVoice('com.apple.ttsbundle.Moira-compact');
 ```
 
 ### Events
+
+Subscribe to TTS events
 
 ```js
 Tts.addEventListener('tts-start', (utteranceId) => console.log("start", utteranceId));
