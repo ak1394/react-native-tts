@@ -73,9 +73,9 @@ Tts.setDefaultVoice('com.apple.ttsbundle.Moira-compact');
 Subscribe to TTS events
 
 ```js
-Tts.addEventListener('tts-start', (utteranceId) => console.log("start", utteranceId));
-Tts.addEventListener('tts-finish', (utteranceId) => console.log("finish", utteranceId));
-Tts.addEventListener('tts-cancel', (utteranceId) => console.log("cancel", utteranceId));
+Tts.addEventListener('tts-start', (event) => console.log("start", event));
+Tts.addEventListener('tts-finish', (event) => console.log("finish", event));
+Tts.addEventListener('tts-cancel', (event) => console.log("cancel", event));
 ```
 
 ## License
