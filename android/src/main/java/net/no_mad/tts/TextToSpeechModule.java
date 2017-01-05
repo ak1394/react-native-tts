@@ -20,6 +20,7 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.Locale;
 import java.util.HashMap;
+import java.lang.Math;
 
 public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
@@ -103,7 +104,14 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     public void setDefaultRate(Float rate, Promise promise) {
         if(notReady(promise)) return;
 
-        int result = tts.setPitch(rate);
+        // rate value will be in the range 0.0 to 1.0
+        // let's convert it to the range of values Android platform expects,
+        // where 1.0 is no change of rate and 2.0 is the twice faster rate
+        float androidRate = rate.floatValue() < 0.5f ?
+            rate.floatValue() * 2 : // linear fit {0, 0}, {0.25, 0.5}, {0.5, 1}
+            rate.floatValue() * 4 - 1; // linear fit {{0.5, 1}, {0.75, 2}, {1, 3}}
+
+        int result = tts.setSpeechRate(androidRate);
 
         promise.resolve(result);
     }

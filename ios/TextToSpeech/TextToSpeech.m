@@ -129,11 +129,11 @@ RCT_EXPORT_METHOD(setDefaultRate:(float)rate
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {
-    if(rate) {
+    if(rate > AVSpeechUtteranceMinimumSpeechRate && rate < AVSpeechUtteranceMaximumSpeechRate) {
         _defaultRate = rate;
         resolve(@"success");
     } else {
-        reject(@"not_found", @"Wrong rate value", nil);
+        reject(@"bad_rate", @"Wrong rate value", nil);
     }
 }
 
