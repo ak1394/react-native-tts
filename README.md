@@ -68,6 +68,14 @@ Sets default voice, pass one of the voiceId as reported by a call to Tts.voices(
 Tts.setDefaultVoice('com.apple.ttsbundle.Moira-compact');
 ```
 
+### Set default Speech Rate
+
+Sets default speech rate. The rate parameter is a float where where 0.01 is a slowest rate and 0.99 is the fastest rate.
+
+```js
+Tts.setDefaultRate(0.6);
+```
+
 ### Events
 
 Subscribe to TTS events
