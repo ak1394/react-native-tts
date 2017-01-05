@@ -14,4 +14,5 @@
 @interface TextToSpeech : RCTEventEmitter <RCTBridgeModule, AVSpeechSynthesizerDelegate>
 @property (nonatomic, strong) AVSpeechSynthesizer *synthesizer;
 @property (nonatomic, strong) AVSpeechSynthesisVoice *defaultVoice;
+@property (nonatomic) float defaultRate;
 @end
