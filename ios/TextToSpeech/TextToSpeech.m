@@ -30,7 +30,7 @@ RCT_EXPORT_MODULE()
         _synthesizer = [AVSpeechSynthesizer new];
         _synthesizer.delegate = self;
     }
-    
+
     return self;
 }
 
@@ -43,15 +43,19 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
         reject(@"no_text", @"No text to speak", nil);
         return;
     }
-    
+
     AVSpeechUtterance *utterance = [[AVSpeechUtterance alloc] initWithString:text];
-    
+
     if(voice) {
         utterance.voice = [AVSpeechSynthesisVoice voiceWithIdentifier:voice];
     } else if (_defaultVoice) {
         utterance.voice = _defaultVoice;
     }
-    
+
+    if (_defaultRate) {
+        utterance.rate = _defaultRate;
+    }
+
     [self.synthesizer speakUtterance:utterance];
     resolve([NSNumber numberWithUnsignedLong:utterance.hash]);
 }
@@ -59,37 +63,37 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
 RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary boundary;
-    
+
     if(onWordBoundary != NULL && *onWordBoundary) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;
     }
-    
+
     BOOL stopped = [self.synthesizer stopSpeakingAtBoundary:boundary];
-    
+
     resolve([NSNumber numberWithBool:stopped]);
 }
 
 RCT_EXPORT_METHOD(pause:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary boundary;
-    
+
     if(onWordBoundary != NULL && *onWordBoundary) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;
     }
-    
+
     BOOL paused = [self.synthesizer pauseSpeakingAtBoundary:boundary];
-    
+
     resolve([NSNumber numberWithBool:paused]);
 }
 
 RCT_EXPORT_METHOD(resume:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     BOOL continued = [self.synthesizer continueSpeaking];
-    
+
     resolve([NSNumber numberWithBool:continued]);
 }
 
@@ -98,7 +102,7 @@ RCT_EXPORT_METHOD(setDefaultLanguage:(NSString *)language
                   reject:(RCTPromiseRejectBlock)reject)
 {
     AVSpeechSynthesisVoice *voice = [AVSpeechSynthesisVoice voiceWithLanguage:language];
-    
+
     if(voice) {
         _defaultVoice = voice;
         resolve(@"success");
@@ -112,7 +116,7 @@ RCT_EXPORT_METHOD(setDefaultVoice:(NSString *)identifier
                   reject:(RCTPromiseRejectBlock)reject)
 {
     AVSpeechSynthesisVoice *voice = [AVSpeechSynthesisVoice voiceWithIdentifier:identifier];
-    
+
     if(voice) {
         _defaultVoice = voice;
         resolve(@"success");
@@ -121,15 +125,27 @@ RCT_EXPORT_METHOD(setDefaultVoice:(NSString *)identifier
     }
 }
 
+RCT_EXPORT_METHOD(setDefaultRate:(float)rate
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+    if(rate > AVSpeechUtteranceMinimumSpeechRate && rate < AVSpeechUtteranceMaximumSpeechRate) {
+        _defaultRate = rate;
+        resolve(@"success");
+    } else {
+        reject(@"bad_rate", @"Wrong rate value", nil);
+    }
+}
+
 RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
     NSMutableArray *voices = [NSMutableArray new];
-    
+
     for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
         [voices addObject:@{@"id": voice.identifier, @"name": voice.name, @"language": voice.language}];
     }
-    
+
     resolve(voices);
 }
 
