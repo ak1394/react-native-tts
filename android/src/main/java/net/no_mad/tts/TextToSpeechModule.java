@@ -100,6 +100,15 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void setDefaultRate(Float rate, Promise promise) {
+        if(notReady(promise)) return;
+
+        int result = tts.setPitch(rate);
+
+        promise.resolve(result);
+    }
+
+    @ReactMethod
     public void setDefaultVoice(String voiceId, Promise promise) {
         if(notReady(promise)) return;
 
