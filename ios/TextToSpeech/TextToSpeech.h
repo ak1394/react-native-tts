@@ -6,8 +6,8 @@
 //  Copyright © 2016 Anton Krasovsky. All rights reserved.
 //
 
-#import "RCTBridgeModule.h"
-#import "RCTEventEmitter.h"
+#import "React/RCTBridgeModule.h"
+#import "React/RCTEventEmitter.h"
 
 @import AVFoundation;
 
