@@ -6,9 +6,9 @@
 //  Copyright © 2016 Anton Krasovsky. All rights reserved.
 //
 
-#import "React/RCTBridge.h"
-#import "React/RCTEventDispatcher.h"
-#import "React/RCTLog.h"
+#import <React/RCTBridge.h>
+#import <React/RCTEventDispatcher.h>
+#import <React/RCTLog.h>
 
 #import "TextToSpeech.h"
 
