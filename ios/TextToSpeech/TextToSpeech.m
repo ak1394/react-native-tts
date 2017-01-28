@@ -126,6 +126,7 @@ RCT_EXPORT_METHOD(setDefaultVoice:(NSString *)identifier
 }
 
 RCT_EXPORT_METHOD(setDefaultRate:(float)rate
+                  skipTransform:(BOOL *)skipTransform // not used, compatibility with Android native module signature
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {

@@ -76,6 +76,15 @@ Sets default speech rate. The rate parameter is a float where where 0.01 is a sl
 Tts.setDefaultRate(0.6);
 ```
 
+There is a significant difference to how the rate parameter is interpreted by iOS and Android native TTS APIs. To provide unified cross-platform behaviour, translation is applied to the rate value. However, if you want to turn off translation you can provide optional `skipTransform` parameter to `Tts.setDefaultRate()` to pass rate value unmodified.
+
+Do not translate rate parameter:
+
+```js
+Tts.setDefaultRate(0.6, true);
+```
+
+
 ### Events
 
 Subscribe to TTS events
