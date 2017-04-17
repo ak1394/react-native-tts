@@ -1,9 +1,11 @@
 package net.no_mad.tts;
 
+import android.media.AudioManager;
 import android.os.Build;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.Voice;
 import android.speech.tts.UtteranceProgressListener;
+import android.util.Log;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.GuardedAsyncTask;
@@ -27,41 +29,49 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private TextToSpeech tts;
     private boolean ready;
 
+    private AudioManager am;
+    private AudioManager.OnAudioFocusChangeListener afChangeListener;
+
     public TextToSpeechModule(ReactApplicationContext reactContext) {
         super(reactContext);
 
         tts = new TextToSpeech(getReactApplicationContext(), new TextToSpeech.OnInitListener() {
-                @Override
-                public void onInit(int status) {
-                    if (status != TextToSpeech.SUCCESS) {
-                        ready = false;
-                    } else {
-                        ready = true;
-                    }
+            @Override
+            public void onInit(int status) {
+                if (status != TextToSpeech.SUCCESS) {
+                    ready = false;
+                } else {
+                    ready = true;
                 }
-            });
+            }
+        });
 
         tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override
-                public void onStart(String utteranceId) {
-                    sendEvent("tts-start", utteranceId);
-                }
+            @Override
+            public void onStart(String utteranceId) {
+                sendEvent("tts-start", utteranceId);
+            }
 
-                @Override
-                public void onDone(String utteranceId) {
-                    sendEvent("tts-finish", utteranceId);
-                }
+            @Override
+            public void onDone(String utteranceId) {
+                am.abandonAudioFocus(afChangeListener);
+                sendEvent("tts-finish", utteranceId);
+            }
 
-                @Override
-                public void onError(String utteranceId) {
-                    sendEvent("tts-error", utteranceId);
-                }
+            @Override
+            public void onError(String utteranceId) {
+                am.abandonAudioFocus(afChangeListener);
+                sendEvent("tts-error", utteranceId);
+            }
 
-                @Override
-                public void onStop(String utteranceId, boolean interrupted) {
-                    sendEvent("tts-cancel", utteranceId);
-                }
-            });
+            @Override
+            public void onStop(String utteranceId, boolean interrupted) {
+                am.abandonAudioFocus(afChangeListener);
+                sendEvent("tts-cancel", utteranceId);
+            }
+        });
+
+        am = (AudioManager) reactContext.getApplicationContext().getSystemService(reactContext.AUDIO_SERVICE);
     }
 
     @Override
@@ -73,12 +83,23 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     public void speak(String utterance, Promise promise) {
         if(notReady(promise)) return;
 
-        String utteranceId = Integer.toString(utterance.hashCode());
-        int result = speak(utterance, utteranceId);
-        if(result == TextToSpeech.SUCCESS) {
-            promise.resolve(utteranceId);
+        // Request audio focus for playback
+        int amResult = this.am.requestAudioFocus(afChangeListener,
+                // Use the music stream.
+                AudioManager.STREAM_MUSIC,
+                // Request permanent focus.
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+
+        if (amResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            String utteranceId = Integer.toString(utterance.hashCode());
+            int speakResult = speak(utterance, utteranceId);
+            if(speakResult == TextToSpeech.SUCCESS) {
+                promise.resolve(utteranceId);
+            } else {
+                promise.reject("unable to play");
+            }
         } else {
-            promise.reject("unable to play");
+            promise.reject("Android AudioManager Error");
         }
     }
 
@@ -97,20 +118,20 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
         int result = tts.setLanguage(locale);
         switch (result) {
-        case TextToSpeech.LANG_AVAILABLE:
-        case TextToSpeech.LANG_COUNTRY_AVAILABLE:
-        case TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE:
-            promise.resolve("success");
-            break;
-        case TextToSpeech.LANG_MISSING_DATA:
-            promise.reject("not_found", "Language data is missing");
-            break;
-        case TextToSpeech.LANG_NOT_SUPPORTED:
-            promise.reject("not_found", "Language is not supported");
-            break;
-        default:
-            promise.reject("error", "Unknown error code");
-            break;
+            case TextToSpeech.LANG_AVAILABLE:
+            case TextToSpeech.LANG_COUNTRY_AVAILABLE:
+            case TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE:
+                promise.resolve("success");
+                break;
+            case TextToSpeech.LANG_MISSING_DATA:
+                promise.reject("not_found", "Language data is missing");
+                break;
+            case TextToSpeech.LANG_NOT_SUPPORTED:
+                promise.reject("not_found", "Language is not supported");
+                break;
+            default:
+                promise.reject("error", "Unknown error code");
+                break;
         }
     }
 
@@ -126,8 +147,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             // let's convert it to the range of values Android platform expects,
             // where 1.0 is no change of rate and 2.0 is the twice faster rate
             float androidRate = rate.floatValue() < 0.5f ?
-                rate.floatValue() * 2 : // linear fit {0, 0}, {0.25, 0.5}, {0.5, 1}
-                rate.floatValue() * 4 - 1; // linear fit {{0.5, 1}, {0.75, 2}, {1, 3}}
+                    rate.floatValue() * 2 : // linear fit {0, 0}, {0.25, 0.5}, {0.5, 1}
+                    rate.floatValue() * 4 - 1; // linear fit {{0.5, 1}, {0.75, 2}, {1, 3}}
             promise.resolve(tts.setSpeechRate(androidRate));
         }
     }
@@ -208,7 +229,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         WritableMap params = Arguments.createMap();
         params.putString("utteranceId", utteranceId);
         getReactApplicationContext()
-            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-            .emit(eventName, params);
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit(eventName, params);
     }
 }
