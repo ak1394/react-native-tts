@@ -36,6 +36,14 @@ Stop speaking and flush the TTS queue.
 Tts.stop();
 ```
 
+### Ducking
+
+Enable lowering other applications output level while speaking (also referred to as "ducking").
+
+```js
+Tts.setDucking(true);
+```
+
 ### List Voices
 
 Returns list of available voices 
@@ -84,6 +92,13 @@ Do not translate rate parameter:
 Tts.setDefaultRate(0.6, true);
 ```
 
+### Set default Pitch
+
+Sets default pitch. The pitch parameter is a float where where 1.0 is a normal pitch. On iOS min pitch is 0.5 and max pitch is 2.0
+
+```js
+Tts.setDefaultPitch(1.5);
+```
 
 ### Events
 
