@@ -29,11 +29,7 @@ RCT_EXPORT_MODULE()
     if (self) {
         _synthesizer = [AVSpeechSynthesizer new];
         _synthesizer.delegate = self;
-        
-        AVAudioSession *session = [AVAudioSession sharedInstance];
-        [session setCategory:AVAudioSessionCategoryPlayback
-                      withOptions:AVAudioSessionCategoryOptionDuckOthers
-                            error:nil];
+        _ducking = false;
     }
 
     return self;
@@ -102,6 +98,24 @@ RCT_EXPORT_METHOD(resume:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPro
     resolve([NSNumber numberWithBool:continued]);
 }
 
+
+RCT_EXPORT_METHOD(setDucking:(BOOL *)ducking
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(__unused RCTPromiseRejectBlock)reject)
+{
+    _ducking = ducking;
+    
+    if(ducking) {
+        AVAudioSession *session = [AVAudioSession sharedInstance];
+        [session setCategory:AVAudioSessionCategoryPlayback
+                 withOptions:AVAudioSessionCategoryOptionDuckOthers
+                       error:nil];
+    }
+    
+    resolve(@"success");
+}
+
+
 RCT_EXPORT_METHOD(setDefaultLanguage:(NSString *)language
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
@@ -147,38 +161,46 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
     NSMutableArray *voices = [NSMutableArray new];
-
+    
     for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
         [voices addObject:@{@"id": voice.identifier, @"name": voice.name, @"language": voice.language}];
     }
-
+    
     resolve(voices);
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didStartSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [[AVAudioSession sharedInstance] setActive:YES error:nil];
+    if(_ducking) {
+        [[AVAudioSession sharedInstance] setActive:YES error:nil];
+    }
     
     [self sendEventWithName:@"tts-start" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didFinishSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [[AVAudioSession sharedInstance] setActive:NO error:nil];
+    if(_ducking) {
+        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+    }
     
     [self sendEventWithName:@"tts-finish" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didPauseSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [[AVAudioSession sharedInstance] setActive:NO error:nil];
+    if(_ducking) {
+        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+    }
     
     [self sendEventWithName:@"tts-pause" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didContinueSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [[AVAudioSession sharedInstance] setActive:YES error:nil];
+    if(_ducking) {
+        [[AVAudioSession sharedInstance] setActive:YES error:nil];
+    }
     
     [self sendEventWithName:@"tts-resume" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
@@ -193,7 +215,9 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didCancelSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    [[AVAudioSession sharedInstance] setActive:NO error:nil];
+    if(_ducking) {
+        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+    }
     
     [self sendEventWithName:@"tts-cancel" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
 }

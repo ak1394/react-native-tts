@@ -29,11 +29,13 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private TextToSpeech tts;
     private boolean ready;
 
-    private AudioManager am;
+    private boolean ducking = false;
+    private AudioManager audioManager;
     private AudioManager.OnAudioFocusChangeListener afChangeListener;
 
     public TextToSpeechModule(ReactApplicationContext reactContext) {
         super(reactContext);
+        audioManager = (AudioManager) reactContext.getApplicationContext().getSystemService(reactContext.AUDIO_SERVICE);
 
         tts = new TextToSpeech(getReactApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
@@ -54,24 +56,29 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onDone(String utteranceId) {
-                am.abandonAudioFocus(afChangeListener);
+                if(ducking) {
+                    audioManager.abandonAudioFocus(afChangeListener);
+                }
                 sendEvent("tts-finish", utteranceId);
             }
 
             @Override
             public void onError(String utteranceId) {
-                am.abandonAudioFocus(afChangeListener);
+                if(ducking) {
+                    audioManager.abandonAudioFocus(afChangeListener);
+                }
                 sendEvent("tts-error", utteranceId);
             }
 
             @Override
             public void onStop(String utteranceId, boolean interrupted) {
-                am.abandonAudioFocus(afChangeListener);
+                if(ducking) {
+                    audioManager.abandonAudioFocus(afChangeListener);
+                }
                 sendEvent("tts-cancel", utteranceId);
             }
         });
 
-        am = (AudioManager) reactContext.getApplicationContext().getSystemService(reactContext.AUDIO_SERVICE);
     }
 
     @Override
@@ -83,23 +90,26 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     public void speak(String utterance, Promise promise) {
         if(notReady(promise)) return;
 
-        // Request audio focus for playback
-        int amResult = this.am.requestAudioFocus(afChangeListener,
-                // Use the music stream.
-                AudioManager.STREAM_MUSIC,
-                // Request permanent focus.
-                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+        if(ducking) {
+            // Request audio focus for playback
+            int amResult = audioManager.requestAudioFocus(afChangeListener,
+                                                          // Use the music stream.
+                                                          AudioManager.STREAM_MUSIC,
+                                                          // Request permanent focus.
+                                                          AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
 
-        if (amResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            String utteranceId = Integer.toString(utterance.hashCode());
-            int speakResult = speak(utterance, utteranceId);
-            if(speakResult == TextToSpeech.SUCCESS) {
-                promise.resolve(utteranceId);
-            } else {
-                promise.reject("unable to play");
+            if(amResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                promise.reject("Android AudioManager error, failed to request audio focus");
+                return;
             }
+        }
+
+        String utteranceId = Integer.toString(utterance.hashCode());
+        int speakResult = speak(utterance, utteranceId);
+        if(speakResult == TextToSpeech.SUCCESS) {
+            promise.resolve(utteranceId);
         } else {
-            promise.reject("Android AudioManager Error");
+            promise.reject("unable to play");
         }
     }
 
@@ -133,6 +143,13 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 promise.reject("error", "Unknown error code");
                 break;
         }
+    }
+
+    @ReactMethod
+    public void setDucking(Boolean ducking, Promise promise) {
+        if(notReady(promise)) return;
+        this.ducking = ducking;
+        promise.resolve("success");
     }
 
     @ReactMethod

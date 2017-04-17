@@ -8,6 +8,10 @@ class Tts extends NativeEventEmitter {
     super(TextToSpeech);
   }
 
+  setDucking(enabled) {
+    return TextToSpeech.setDucking(enabled);
+  }
+
   setDefaultVoice(voiceId) {
     return TextToSpeech.setDefaultVoice(voiceId);
   }
