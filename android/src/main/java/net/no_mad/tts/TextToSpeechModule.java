@@ -171,6 +171,18 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void setDefaultPitch(Float pitch, Boolean skipTransform, Promise promise) {
+        if(notReady(promise)) return;
+
+        if(skipTransform) {
+            promise.resolve(tts.setPitch(pitch));
+        } else {
+            float androidPitch = pitch.floatValue();
+            promise.resolve(tts.setPitch(androidPitch));
+        }
+    }
+
+    @ReactMethod
     public void setDefaultVoice(String voiceId, Promise promise) {
         if(notReady(promise)) return;
 

@@ -157,6 +157,14 @@ RCT_EXPORT_METHOD(setDefaultRate:(float)rate
     }
 }
 
+RCT_EXPORT_METHOD(setDefaultPitch:(float)pitch
+                  skipTransform:(BOOL *)skipTransform // not used, compatibility with Android native module signature
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+    reject(@"bad_pitch", @"not yet implemented on ios platform", nil);
+}
+
 RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {

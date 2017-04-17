@@ -20,6 +20,10 @@ class Tts extends NativeEventEmitter {
     return TextToSpeech.setDefaultRate(rate, !!skipTransform);
   }
 
+  setDefaultPitch(pitch, skipTransform) {
+    return TextToSpeech.setDefaultPitch(pitch, !!skipTransform);
+  }
+
   setDefaultLanguage(language) {
     return TextToSpeech.setDefaultLanguage(language);
   }
