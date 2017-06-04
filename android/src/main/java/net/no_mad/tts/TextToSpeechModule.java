@@ -126,22 +126,26 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             locale = new Locale(language);
         }
 
-        int result = tts.setLanguage(locale);
-        switch (result) {
-            case TextToSpeech.LANG_AVAILABLE:
-            case TextToSpeech.LANG_COUNTRY_AVAILABLE:
-            case TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE:
-                promise.resolve("success");
-                break;
-            case TextToSpeech.LANG_MISSING_DATA:
-                promise.reject("not_found", "Language data is missing");
-                break;
-            case TextToSpeech.LANG_NOT_SUPPORTED:
-                promise.reject("not_found", "Language is not supported");
-                break;
-            default:
-                promise.reject("error", "Unknown error code");
-                break;
+        try {
+          int result = tts.setLanguage(locale);
+          switch (result) {
+              case TextToSpeech.LANG_AVAILABLE:
+              case TextToSpeech.LANG_COUNTRY_AVAILABLE:
+              case TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE:
+                  promise.resolve("success");
+                  break;
+              case TextToSpeech.LANG_MISSING_DATA:
+                  promise.reject("not_found", "Language data is missing");
+                  break;
+              case TextToSpeech.LANG_NOT_SUPPORTED:
+                  promise.reject("not_found", "Language is not supported");
+                  break;
+              default:
+                  promise.reject("error", "Unknown error code");
+                  break;
+          }
+        } catch (Exception e) {
+          promise.reject("error", "Unknown error code");
         }
     }
 
