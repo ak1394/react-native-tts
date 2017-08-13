@@ -3,7 +3,6 @@ import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 const TextToSpeech = NativeModules.TextToSpeech;
 
 class Tts extends NativeEventEmitter {
-
   constructor() {
     super(TextToSpeech);
   }
@@ -20,8 +19,8 @@ class Tts extends NativeEventEmitter {
     return TextToSpeech.setDefaultRate(rate, !!skipTransform);
   }
 
-  setDefaultPitch(pitch) {
-    return TextToSpeech.setDefaultPitch(pitch);
+  setDefaultPitch(pitch, skipTransform) {
+    return TextToSpeech.setDefaultPitch(pitch, !!skipTransform);
   }
 
   setDefaultLanguage(language) {
@@ -33,15 +32,15 @@ class Tts extends NativeEventEmitter {
   }
 
   speak(utterance, voiceId) {
-    if(Platform.OS === 'ios') {
+    if (Platform.OS === 'ios') {
       return TextToSpeech.speak(utterance, voiceId);
     } else {
-      return TextToSpeech.speak(utterance)
+      return TextToSpeech.speak(utterance);
     }
   }
 
   stop(onWordBoundary) {
-    if(Platform.OS === 'ios') {
+    if (Platform.OS === 'ios') {
       return TextToSpeech.stop(onWordBoundary);
     } else {
       return TextToSpeech.stop();
@@ -49,13 +48,13 @@ class Tts extends NativeEventEmitter {
   }
 
   pause(onWordBoundary) {
-    if(Platform.OS === 'ios') {
+    if (Platform.OS === 'ios') {
       return TextToSpeech.pause(onWordBoundary);
     }
   }
 
   resume() {
-    if(Platform.OS === 'ios') {
+    if (Platform.OS === 'ios') {
       return TextToSpeech.resume();
     }
   }
