@@ -107,7 +107,7 @@ RCT_EXPORT_METHOD(setDucking:(BOOL *)ducking
     
     if(ducking) {
         AVAudioSession *session = [AVAudioSession sharedInstance];
-        [session setCategory:AVAudioSessionCategoryPlayback
+        [session setCategory:AVAudioSessionCategorySoloAmbient
                  withOptions:AVAudioSessionCategoryOptionDuckOthers
                        error:nil];
     }
