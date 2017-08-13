@@ -126,22 +126,26 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             locale = new Locale(language);
         }
 
-        int result = tts.setLanguage(locale);
-        switch (result) {
-            case TextToSpeech.LANG_AVAILABLE:
-            case TextToSpeech.LANG_COUNTRY_AVAILABLE:
-            case TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE:
-                promise.resolve("success");
-                break;
-            case TextToSpeech.LANG_MISSING_DATA:
-                promise.reject("not_found", "Language data is missing");
-                break;
-            case TextToSpeech.LANG_NOT_SUPPORTED:
-                promise.reject("not_found", "Language is not supported");
-                break;
-            default:
-                promise.reject("error", "Unknown error code");
-                break;
+        try {
+          int result = tts.setLanguage(locale);
+          switch (result) {
+              case TextToSpeech.LANG_AVAILABLE:
+              case TextToSpeech.LANG_COUNTRY_AVAILABLE:
+              case TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE:
+                  promise.resolve("success");
+                  break;
+              case TextToSpeech.LANG_MISSING_DATA:
+                  promise.reject("not_found", "Language data is missing");
+                  break;
+              case TextToSpeech.LANG_NOT_SUPPORTED:
+                  promise.reject("not_found", "Language is not supported");
+                  break;
+              default:
+                  promise.reject("error", "Unknown error code");
+                  break;
+          }
+        } catch (Exception e) {
+          promise.reject("error", "Unknown error code");
         }
     }
 
@@ -182,16 +186,21 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if(notReady(promise)) return;
 
         if (Build.VERSION.SDK_INT >= 21) {
-            for(Voice voice: tts.getVoices()) {
-                if(voice.getName().equals(voiceId)) {
-                    int result = tts.setVoice(voice);
-                    if(result == TextToSpeech.SUCCESS) {
-                        promise.resolve("success");
-                        return;
-                    } else {
-                        promise.reject("error");
+            try {
+                for(Voice voice: tts.getVoices()) {
+                    if(voice.getName().equals(voiceId)) {
+                        int result = tts.setVoice(voice);
+                        if(result == TextToSpeech.SUCCESS) {
+                            promise.resolve("success");
+                            return;
+                        } else {
+                            promise.reject("error");
+                        }
                     }
                 }
+            } catch (Exception e) {
+              // Purposefully ignore exceptions here due to some buggy TTS engines.
+              // See http://stackoverflow.com/questions/26730082/illegalargumentexception-invalid-int-os-with-samsung-tts
             }
             promise.reject("not found");
         } else {
@@ -206,12 +215,17 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         WritableArray voiceArray = Arguments.createArray();
 
         if (Build.VERSION.SDK_INT >= 21) {
-            for(Voice voice: tts.getVoices()) {
-                WritableMap voiceMap = Arguments.createMap();
-                voiceMap.putString("id", voice.getName());
-                voiceMap.putString("name", voice.getName());
-                voiceMap.putString("language", voice.getLocale().toLanguageTag());
-                voiceArray.pushMap(voiceMap);
+            try {
+                for(Voice voice: tts.getVoices()) {
+                    WritableMap voiceMap = Arguments.createMap();
+                    voiceMap.putString("id", voice.getName());
+                    voiceMap.putString("name", voice.getName());
+                    voiceMap.putString("language", voice.getLocale().toLanguageTag());
+                    voiceArray.pushMap(voiceMap);
+                }
+            } catch (Exception e) {
+              // Purposefully ignore exceptions here due to some buggy TTS engines.
+              // See http://stackoverflow.com/questions/26730082/illegalargumentexception-invalid-int-os-with-samsung-tts
             }
         }
 
