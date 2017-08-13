@@ -56,6 +56,10 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     if (_defaultRate) {
         utterance.rate = _defaultRate;
     }
+    
+    if (_defaultPitch) {
+        utterance.pitchMultiplier = _defaultPitch;
+    }
 
     [self.synthesizer speakUtterance:utterance];
     resolve([NSNumber numberWithUnsignedLong:utterance.hash]);
@@ -158,11 +162,15 @@ RCT_EXPORT_METHOD(setDefaultRate:(float)rate
 }
 
 RCT_EXPORT_METHOD(setDefaultPitch:(float)pitch
-                  skipTransform:(BOOL *)skipTransform // not used, compatibility with Android native module signature
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {
-    reject(@"bad_pitch", @"not yet implemented on ios platform", nil);
+    if(pitch > 0.5 && pitch < 2.0) {
+        _defaultPitch = pitch;
+        resolve(@"success");
+    } else {
+        reject(@"bad_rate", @"Wrong pitch value", nil);
+    }
 }
 
 RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve

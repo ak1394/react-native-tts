@@ -15,5 +15,6 @@
 @property (nonatomic, strong) AVSpeechSynthesizer *synthesizer;
 @property (nonatomic, strong) AVSpeechSynthesisVoice *defaultVoice;
 @property (nonatomic) float defaultRate;
+@property (nonatomic) float defaultPitch;
 @property (nonatomic) bool ducking;
 @end
