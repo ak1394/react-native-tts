@@ -55,10 +55,21 @@ Tts.voices().then(voices => console.log(voices));
 
 // Prints:
 //
-// [ { id: 'com.apple.ttsbundle.Moira-compact', name: 'Moira', language: 'en-IE' },
+// [ { id: 'com.apple.ttsbundle.Moira-compact', name: 'Moira', language: 'en-IE', quality: 300 },
 // ...
 // { id: 'com.apple.ttsbundle.Samantha-compact', name: 'Samantha', language: 'en-US' } ]
 ```
+
+|Voice field|Description|
+|-----|-----------|-------|
+|id   |Unique voice identifier (e.g. `com.apple.ttsbundle.Moira-compact`)|
+|name |Name of the voice *(iOS only)*|
+|language|BCP-47 language code (e.g. 'en-US')|
+|quality|Voice quality (300 = normal, 500 = enhanced/very high)|
+|latency|Expected synthesizer latency (100 = very low, 500 = very high) *(Android only)*|
+|networkConnectionRequired|True when the voice requires an active network connection *(Android only)*|
+|notInstalled|True when the voice may need to download additional data to be fully functional *(Android only)*|
+
 
 ### Set default Language
 

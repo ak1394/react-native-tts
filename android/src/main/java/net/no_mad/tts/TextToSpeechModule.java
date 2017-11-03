@@ -221,6 +221,10 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                     voiceMap.putString("id", voice.getName());
                     voiceMap.putString("name", voice.getName());
                     voiceMap.putString("language", voice.getLocale().toLanguageTag());
+                    voiceMap.putInt("quality", voice.getQuality());
+                    voiceMap.putInt("latency", voice.getLatency());
+                    voiceMap.putBoolean("networkConnectionRequired", voice.isNetworkConnectionRequired());
+                    voiceMap.putBoolean("notInstalled", voice.getFeatures().contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED));
                     voiceArray.pushMap(voiceMap);
                 }
             } catch (Exception e) {
