@@ -3,26 +3,13 @@ package net.no_mad.tts;
 import android.media.AudioManager;
 import android.os.Build;
 import android.speech.tts.TextToSpeech;
-import android.speech.tts.Voice;
 import android.speech.tts.UtteranceProgressListener;
-import android.util.Log;
-
-import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.GuardedAsyncTask;
-import com.facebook.react.bridge.LifecycleEventListener;
-import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
-import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.bridge.WritableArray;
-import com.facebook.react.bridge.Promise;
-import com.facebook.react.common.ReactConstants;
+import android.speech.tts.Voice;
+import com.facebook.react.bridge.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
-import java.util.Locale;
 import java.util.HashMap;
-import java.lang.Math;
+import java.util.Locale;
 
 public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
@@ -241,6 +228,19 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             promise.resolve("success");
         } else {
             promise.reject("error");
+        }
+    }
+
+    /**
+     * called on React Native Reloading JavaScript
+     * https://stackoverflow.com/questions/15563361/tts-leaked-serviceconnection
+     */
+    @Override
+    public void onCatalystInstanceDestroy() {
+        super.onCatalystInstanceDestroy();
+        if(tts != null) {
+            tts.stop();
+            tts.shutdown();
         }
     }
 
