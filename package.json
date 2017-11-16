@@ -1,6 +1,6 @@
 {
   "name": "react-native-tts",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "React Native Text-To-Speech module for Android and iOS",
   "main": "index.js",
   "repository": {
@@ -22,5 +22,13 @@
   "bugs": {
     "url": "https://github.com/ak1394/react-native-tts/issues"
   },
-  "homepage": "https://github.com/ak1394/react-native-tts#readme"
+  "homepage": "https://github.com/ak1394/react-native-tts#readme",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "react": "16.0.0-beta.5",
+    "react-native": "0.49.5"
+  }
 }
