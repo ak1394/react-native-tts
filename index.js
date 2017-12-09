@@ -7,6 +7,13 @@ class Tts extends NativeEventEmitter {
     super(TextToSpeech);
   }
 
+  initialize() {
+    if (Platform.OS === 'ios') {
+      return Promise.resolve(true);
+    }
+    return TextToSpeech.initialize();
+  }
+
   setDucking(enabled) {
     return TextToSpeech.setDucking(enabled);
   }

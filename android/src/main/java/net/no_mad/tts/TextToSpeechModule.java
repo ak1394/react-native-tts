@@ -36,14 +36,19 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     public TextToSpeechModule(ReactApplicationContext reactContext) {
         super(reactContext);
         audioManager = (AudioManager) reactContext.getApplicationContext().getSystemService(reactContext.AUDIO_SERVICE);
+    }
 
+    @ReactMethod
+    public void initialize(final Promise promise) {
         tts = new TextToSpeech(getReactApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
                 if (status != TextToSpeech.SUCCESS) {
                     ready = false;
+                    promise.reject("TTS failed to initialize");
                 } else {
                     ready = true;
+                    promise.resolve(true);
                 }
             }
         });
@@ -78,7 +83,6 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 sendEvent("tts-cancel", utteranceId);
             }
         });
-
     }
 
     @Override
