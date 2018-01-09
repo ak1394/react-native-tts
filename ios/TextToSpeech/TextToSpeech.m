@@ -35,6 +35,11 @@ RCT_EXPORT_MODULE()
     return self;
 }
 
++ (BOOL)requiresMainQueueSetup
+{
+    return YES;
+}
+
 RCT_EXPORT_METHOD(speak:(NSString *)text
                   voice:(NSString *)voice
                   resolve:(RCTPromiseResolveBlock)resolve
