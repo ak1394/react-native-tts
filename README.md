@@ -61,7 +61,7 @@ Tts.voices().then(voices => console.log(voices));
 ```
 
 |Voice field|Description|
-|-----|-----------|-------|
+|-----|-------|
 |id   |Unique voice identifier (e.g. `com.apple.ttsbundle.Moira-compact`)|
 |name |Name of the voice *(iOS only)*|
 |language|BCP-47 language code (e.g. 'en-US')|
