@@ -285,12 +285,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     @SuppressWarnings("deprecation")
     private int speak(String utterance, String utteranceId, ReadableMap inputParams) {
-        int audioStreamType;
-
         String audioStreamTypeString = inputParams.hasKey("KEY_PARAM_STREAM") ? inputParams.getString("KEY_PARAM_STREAM") : null;
-        float volume = inputParams.hasKey("KEY_PARAM_VOLUME") ? (float) inputParams.getDouble("KEY_PARAM_VOLUME") : (float) 1;
-        float pan = inputParams.hasKey("KEY_PARAM_PAN") ? (float) inputParams.getDouble("KEY_PARAM_PAN") : (float) 0;
+        float volume = inputParams.hasKey("KEY_PARAM_VOLUME") ? (float) inputParams.getDouble("KEY_PARAM_VOLUME") : 1.0f;
+        float pan = inputParams.hasKey("KEY_PARAM_PAN") ? (float) inputParams.getDouble("KEY_PARAM_PAN") : 0.0f;
 
+        int audioStreamType;
         switch(audioStreamTypeString) {
             case "STREAM_ACCESSIBILITY":
                 audioStreamType = AudioManager.STREAM_ACCESSIBILITY;
