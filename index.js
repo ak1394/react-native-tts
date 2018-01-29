@@ -38,11 +38,11 @@ class Tts extends NativeEventEmitter {
     return TextToSpeech.voices();
   }
 
-  speak(utterance, voiceId) {
+  speak(utterance, voiceId, params) {
     if (Platform.OS === 'ios') {
       return TextToSpeech.speak(utterance, voiceId);
     } else {
-      return TextToSpeech.speak(utterance);
+      return TextToSpeech.speak(utterance, params);
     }
   }
 

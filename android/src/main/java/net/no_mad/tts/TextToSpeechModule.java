@@ -2,6 +2,7 @@ package net.no_mad.tts;
 
 import android.media.AudioManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.speech.tts.Voice;
@@ -99,7 +100,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void speak(String utterance, Promise promise) {
+    public void speak(String utterance, ReadableMap params, Promise promise) {
         if(notReady(promise)) return;
 
         if(ducking) {
@@ -117,7 +118,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         }
 
         String utteranceId = Integer.toString(utterance.hashCode());
-        int speakResult = speak(utterance, utteranceId);
+
+        int speakResult = speak(utterance, utteranceId, params);
         if(speakResult == TextToSpeech.SUCCESS) {
             promise.resolve(utteranceId);
         } else {
@@ -282,12 +284,53 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     @SuppressWarnings("deprecation")
-    private int speak(String utterance, String utteranceId) {
+    private int speak(String utterance, String utteranceId, ReadableMap inputParams) {
+        String audioStreamTypeString = inputParams.hasKey("KEY_PARAM_STREAM") ? inputParams.getString("KEY_PARAM_STREAM") : null;
+        float volume = inputParams.hasKey("KEY_PARAM_VOLUME") ? (float) inputParams.getDouble("KEY_PARAM_VOLUME") : 1.0f;
+        float pan = inputParams.hasKey("KEY_PARAM_PAN") ? (float) inputParams.getDouble("KEY_PARAM_PAN") : 0.0f;
+
+        int audioStreamType;
+        switch(audioStreamTypeString) {
+            case "STREAM_ACCESSIBILITY":
+                audioStreamType = AudioManager.STREAM_ACCESSIBILITY;
+                break;
+            case "STREAM_ALARM":
+                audioStreamType = AudioManager.STREAM_ALARM;
+                break;
+            case "STREAM_DTMF":
+                audioStreamType = AudioManager.STREAM_DTMF;
+                break;
+            case "STREAM_MUSIC":
+                audioStreamType = AudioManager.STREAM_MUSIC;
+                break;
+            case "STREAM_NOTIFICATION":
+                audioStreamType = AudioManager.STREAM_NOTIFICATION;
+                break;
+            case "STREAM_RING":
+                audioStreamType = AudioManager.STREAM_RING;
+                break;
+            case "STREAM_SYSTEM":
+                audioStreamType = AudioManager.STREAM_SYSTEM;
+                break;
+            case "STREAM_VOICE_CALL":
+                audioStreamType = AudioManager.STREAM_VOICE_CALL;
+                break;
+            default:
+                audioStreamType = AudioManager.USE_DEFAULT_STREAM_TYPE;
+        }
+
         if (Build.VERSION.SDK_INT >= 21) {
-            return tts.speak(utterance, TextToSpeech.QUEUE_ADD, null, utteranceId);
+            Bundle params = new Bundle();
+            params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, audioStreamType);
+            params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume);
+            params.putFloat(TextToSpeech.Engine.KEY_PARAM_PAN, pan);
+            return tts.speak(utterance, TextToSpeech.QUEUE_ADD, params, utteranceId);
         } else {
             HashMap<String, String> params = new HashMap();
             params.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId);
+            params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(audioStreamType));
+            params.put(TextToSpeech.Engine.KEY_PARAM_VOLUME, String.valueOf(volume));
+            params.put(TextToSpeech.Engine.KEY_PARAM_PAN, String.valueOf(pan));
             return tts.speak(utterance, TextToSpeech.QUEUE_ADD, params);
         }
     }
