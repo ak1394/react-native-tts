@@ -38,11 +38,20 @@ class Tts extends NativeEventEmitter {
     return TextToSpeech.voices();
   }
 
-  speak(utterance, voiceId, params) {
-    if (Platform.OS === 'ios') {
-      return TextToSpeech.speak(utterance, voiceId);
+  speak(utterance, options = {}) {
+    // compatibility with old-style voiceId argument passing
+    if (typeof options === 'string') {
+      if (Platform.OS === 'ios') {
+        return TextToSpeech.speak(utterance, options);
+      } else {
+        return TextToSpeech.speak(utterance);
+      }
     } else {
-      return TextToSpeech.speak(utterance, params);
+      if (Platform.OS === 'ios') {
+        return TextToSpeech.speak(utterance, options.iosVoiceId);
+      } else {
+        return TextToSpeech.speak(utterance, options.androidParams);
+      }
     }
   }
 
@@ -58,12 +67,14 @@ class Tts extends NativeEventEmitter {
     if (Platform.OS === 'ios') {
       return TextToSpeech.pause(onWordBoundary);
     }
+    return null;
   }
 
   resume() {
     if (Platform.OS === 'ios') {
       return TextToSpeech.resume();
     }
+    return null;
   }
 
   addEventListener(type, handler) {
