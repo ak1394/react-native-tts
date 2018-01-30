@@ -30,10 +30,30 @@ Add utterance to TTS queue and start speaking. Returns promise with utteranceId.
 ```js
 Tts.speak('Hello, world!');
 ```
+
+Additionally, speak() allows to pass platform-specific options 'voiceId' on IOS and 'params' on Android to underlying platform API:
+
+```js
+Tts.speak('Hello, world!', { iosVoiceId: 'com.apple.ttsbundle.Moira-compact' });
+Tts.speak('Hello, world!', { androidParams: { KEY_PARAM_PAN: -1, KEY_PARAM_VOLUME: 0.5 } });
+```
+
 Stop speaking and flush the TTS queue.
 
 ```js
 Tts.stop();
+```
+
+### Waiting for initialization
+
+On some platforms it could take some time to initialize TTS engine, and Tts.speak() will fail to speak until the engine is ready.
+
+To wait for successfull initialization you could use getInitStatus() call.
+
+```js
+Tts.getInitStatus().then(() => {
+  Tts.speak('Hello, world!');
+});
 ```
 
 ### Ducking
