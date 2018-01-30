@@ -44,13 +44,13 @@ class Tts extends NativeEventEmitter {
       if (Platform.OS === 'ios') {
         return TextToSpeech.speak(utterance, options);
       } else {
-        return TextToSpeech.speak(utterance);
+        return TextToSpeech.speak(utterance, {});
       }
     } else {
       if (Platform.OS === 'ios') {
         return TextToSpeech.speak(utterance, options.iosVoiceId);
       } else {
-        return TextToSpeech.speak(utterance, options.androidParams);
+        return TextToSpeech.speak(utterance, options.androidParams || {});
       }
     }
   }
