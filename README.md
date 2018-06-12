@@ -7,6 +7,7 @@ React Native TTS is a text-to-speech library for [React Native](https://facebook
 - [Install](#install)
 - [Usage](#usage)
 - [License](#license)
+- [Example project](#example)
 
 ## Install
 
@@ -148,6 +149,10 @@ Tts.addEventListener('tts-start', (event) => console.log("start", event));
 Tts.addEventListener('tts-finish', (event) => console.log("finish", event));
 Tts.addEventListener('tts-cancel', (event) => console.log("cancel", event));
 ```
+
+## Example
+
+If you want to test the library functionalities there is an example project available at [this address](https://github.com/themostaza/react-native-tts-example/tree/master)
 
 ## License
 
