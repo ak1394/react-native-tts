@@ -1,6 +1,6 @@
 {
   "name": "react-native-tts",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "React Native Text-To-Speech module for Android and iOS",
   "main": "index.js",
   "repository": {
