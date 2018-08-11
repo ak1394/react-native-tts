@@ -74,7 +74,7 @@ RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)re
 {
     AVSpeechBoundary boundary;
 
-    if(onWordBoundary != NULL && *onWordBoundary) {
+    if(onWordBoundary != NULL && onWordBoundary) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;
@@ -89,7 +89,7 @@ RCT_EXPORT_METHOD(pause:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)r
 {
     AVSpeechBoundary boundary;
 
-    if(onWordBoundary != NULL && *onWordBoundary) {
+    if(onWordBoundary != NULL && onWordBoundary) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;

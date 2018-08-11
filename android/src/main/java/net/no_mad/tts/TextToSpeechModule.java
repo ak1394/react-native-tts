@@ -3,6 +3,10 @@ package net.no_mad.tts;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.content.Intent;
+import android.content.ActivityNotFoundException;
+import android.app.Activity;
+import android.net.Uri;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.speech.tts.Voice;
@@ -32,16 +36,9 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             @Override
             public void onInit(int status) {
                 synchronized(initStatusPromises) {
-                    if (status != TextToSpeech.SUCCESS) {
-                        ready = Boolean.FALSE;
-                        for(Promise p: initStatusPromises) {
-                            p.reject("error", "TTS failed to initialize");
-                        }
-                    } else {
-                        ready = Boolean.TRUE;
-                        for(Promise p: initStatusPromises) {
-                            p.resolve("success");
-                        }
+                    ready = (status == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
+                    for(Promise p: initStatusPromises) {
+                        resolveReadyPromise(p);
                     }
                     initStatusPromises.clear();
                 }
@@ -78,7 +75,59 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 sendEvent("tts-cancel", utteranceId);
             }
         });
+    }
 
+    private void resolveReadyPromise(Promise promise) {
+        if (ready == Boolean.TRUE) {
+            promise.resolve("success");
+        }
+        else {
+            promise.reject("no_engine", "No TTS engine installed");
+        }
+    }
+
+    private static void resolvePromiseWithStatusCode(int statusCode, Promise promise) {
+        switch (statusCode) {
+            case TextToSpeech.SUCCESS:
+                promise.resolve("success");
+                break;
+            case TextToSpeech.LANG_COUNTRY_AVAILABLE:
+                promise.resolve("lang_country_available");
+                break;
+            case TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE:
+                promise.resolve("lang_country_var_available");
+                break;
+            case TextToSpeech.ERROR_INVALID_REQUEST:
+                promise.reject("invalid_request", "Failure caused by an invalid request");
+                break;
+            case TextToSpeech.ERROR_NETWORK:
+                promise.reject("network_error", "Failure caused by a network connectivity problems");
+                break;
+            case TextToSpeech.ERROR_NETWORK_TIMEOUT:
+                promise.reject("network_timeout", "Failure caused by network timeout.");
+                break;
+            case TextToSpeech.ERROR_NOT_INSTALLED_YET:
+                promise.reject("not_installed_yet", "Unfinished download of voice data");
+                break;
+            case TextToSpeech.ERROR_OUTPUT:
+                promise.reject("output_error", "Failure related to the output (audio device or a file)");
+                break;
+            case TextToSpeech.ERROR_SERVICE:
+                promise.reject("service_error", "Failure of a TTS service");
+                break;
+            case TextToSpeech.ERROR_SYNTHESIS:
+                promise.reject("synthesis_error", "Failure of a TTS engine to synthesize the given input");
+                break;
+            case TextToSpeech.LANG_MISSING_DATA:
+                promise.reject("lang_missing_data", "Language data is missing");
+                break;
+            case TextToSpeech.LANG_NOT_SUPPORTED:
+                promise.reject("lang_not_supported", "Language is not supported");
+                break;
+            default:
+                promise.reject("error", "Unknown error code: " + statusCode);
+                break;
+          }
     }
 
     @Override
@@ -91,10 +140,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         synchronized(initStatusPromises) {
             if(ready == null) {
                 initStatusPromises.add(promise);
-            } else if(ready.equals(Boolean.TRUE)) {
-                promise.resolve("success");
             } else {
-                promise.reject("error", "TTS failed to initialize");
+                resolveReadyPromise(promise);
             }
         }
     }
@@ -123,7 +170,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if(speakResult == TextToSpeech.SUCCESS) {
             promise.resolve(utteranceId);
         } else {
-            promise.reject("unable to play");
+            resolvePromiseWithStatusCode(speakResult, promise);
         }
     }
 
@@ -142,22 +189,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
         try {
           int result = tts.setLanguage(locale);
-          switch (result) {
-              case TextToSpeech.LANG_AVAILABLE:
-              case TextToSpeech.LANG_COUNTRY_AVAILABLE:
-              case TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE:
-                  promise.resolve("success");
-                  break;
-              case TextToSpeech.LANG_MISSING_DATA:
-                  promise.reject("not_found", "Language data is missing");
-                  break;
-              case TextToSpeech.LANG_NOT_SUPPORTED:
-                  promise.reject("not_found", "Language is not supported");
-                  break;
-              default:
-                  promise.reject("error", "Unknown error code");
-                  break;
-          }
+          resolvePromiseWithStatusCode(result, promise);
         } catch (Exception e) {
           promise.reject("error", "Unknown error code");
         }
@@ -204,21 +236,17 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 for(Voice voice: tts.getVoices()) {
                     if(voice.getName().equals(voiceId)) {
                         int result = tts.setVoice(voice);
-                        if(result == TextToSpeech.SUCCESS) {
-                            promise.resolve("success");
-                            return;
-                        } else {
-                            promise.reject("error");
-                        }
+                        resolvePromiseWithStatusCode(result, promise);
+                        return;
                     }
                 }
             } catch (Exception e) {
               // Purposefully ignore exceptions here due to some buggy TTS engines.
               // See http://stackoverflow.com/questions/26730082/illegalargumentexception-invalid-int-os-with-samsung-tts
             }
-            promise.reject("not found");
+            promise.reject("not_found", "The selected voice was not found");
         } else {
-            promise.reject("not available");
+            promise.reject("not_available", "Android API 21 level or higher is required");
         }
     }
 
@@ -255,10 +283,30 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if(notReady(promise)) return;
 
         int result = tts.stop();
-        if(result == TextToSpeech.SUCCESS) {
+        resolvePromiseWithStatusCode(result, promise);
+    }
+
+    @ReactMethod
+    private void requestInstallEngine(Promise promise) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse("market://details?id=com.google.android.tts"));
+        try {
+            getCurrentActivity().startActivity(intent);
             promise.resolve("success");
-        } else {
-            promise.reject("error");
+        } catch (Exception e) {
+            promise.reject("error", "Could not open Google Text to Speech App in the Play Store");
+        }
+    }
+
+    @ReactMethod
+    private void requestInstallData(Promise promise) {
+        Intent intent = new Intent();
+        intent.setAction(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+        try {
+            getCurrentActivity().startActivity(intent);
+            promise.resolve("success");
+        } catch (ActivityNotFoundException e) {
+            promise.reject("no_engine", "No TTS engine installed");
         }
     }
 
@@ -276,8 +324,12 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     private boolean notReady(Promise promise) {
-        if(ready == null || ready.equals(Boolean.FALSE)) {
+        if(ready == null) {
             promise.reject("not_ready", "TTS is not ready");
+            return true;
+        }
+        else if(ready != Boolean.TRUE) {
+            resolveReadyPromise(promise);
             return true;
         }
         return false;
