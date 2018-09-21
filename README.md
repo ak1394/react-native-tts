@@ -144,7 +144,7 @@ Tts.setDefaultPitch(1.5);
 
 Platforms: iOS
 
-- "inherit" (default) - Use the default AVPlayer behavior
+- "inherit" (default) - Use the default behavior
 - "ignore" - Play audio even if the silent switch is set
 - "obey" - Don't play audio if the silent switch is set
 
