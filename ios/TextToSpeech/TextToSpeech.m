@@ -12,7 +12,9 @@
 
 #import "TextToSpeech.h"
 
-@implementation TextToSpeech
+@implementation TextToSpeech {
+    NSString * _ignoreSilentSwitch;
+}
 
 @synthesize bridge = _bridge;
 
@@ -30,6 +32,7 @@ RCT_EXPORT_MODULE()
         _synthesizer = [AVSpeechSynthesizer new];
         _synthesizer.delegate = self;
         _ducking = false;
+        _ignoreSilentSwitch = @"inherit"; // inherit, ignore, obey
     }
 
     return self;
@@ -64,6 +67,12 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     
     if (_defaultPitch) {
         utterance.pitchMultiplier = _defaultPitch;
+    }
+    
+    if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
+        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+    } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
+        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
     }
 
     [self.synthesizer speakUtterance:utterance];
@@ -175,6 +184,16 @@ RCT_EXPORT_METHOD(setDefaultPitch:(float)pitch
         resolve(@"success");
     } else {
         reject(@"bad_rate", @"Wrong pitch value", nil);
+    }
+}
+
+RCT_EXPORT_METHOD(setIgnoreSilentSwitch:(NSString *)ignoreSilentSwitch
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+    if(ignoreSilentSwitch) {
+        _ignoreSilentSwitch = ignoreSilentSwitch;
+        resolve(@"success");
     }
 }
 

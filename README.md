@@ -41,7 +41,7 @@ Tts.speak('Hello, world!', { androidParams: { KEY_PARAM_PAN: -1, KEY_PARAM_VOLUM
 
 For more detail on `androidParams` properties, please take a look at [official android documentation](https://developer.android.com/reference/android/speech/tts/TextToSpeech.Engine.html). Please note that there are still unsupported key with this wrapper library such as `KEY_PARAM_SESSION_ID`. The following are brief summarization of currently implemented keys:
 
-- `KEY_PARAM_PAN` ranges from `-1` to `+1`. 
+- `KEY_PARAM_PAN` ranges from `-1` to `+1`.
 
 - `KEY_PARAM_VOLUME` ranges from `0` to `1`, where 0 means silence. Note that `1` is a default value for Android.
 
@@ -75,7 +75,7 @@ Tts.setDucking(true);
 
 ### List Voices
 
-Returns list of available voices 
+Returns list of available voices
 
 *(not supported on Android API Level < 21, returns empty list)*
 
@@ -108,7 +108,7 @@ Tts.setDefaultLanguage('en-IE');
 
 ### Set default Voice
 
-Sets default voice, pass one of the voiceId as reported by a call to Tts.voices() 
+Sets default voice, pass one of the voiceId as reported by a call to Tts.voices()
 
 *(not available on Android API Level < 21)*
 
@@ -138,6 +138,18 @@ Sets default pitch. The pitch parameter is a float where where 1.0 is a normal p
 
 ```js
 Tts.setDefaultPitch(1.5);
+```
+
+### Controls the iOS silent switch behavior
+
+Platforms: iOS
+
+- "inherit" (default) - Use the default AVPlayer behavior
+- "ignore" - Play audio even if the silent switch is set
+- "obey" - Don't play audio if the silent switch is set
+
+```js
+Tts.setIgnoreSilentSwitch("ignore");
 ```
 
 ### Events
