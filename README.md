@@ -7,6 +7,7 @@ React Native TTS is a text-to-speech library for [React Native](https://facebook
 - [Install](#install)
 - [Usage](#usage)
 - [License](#license)
+- [Example project](#example)
 
 ## Install
 
@@ -30,10 +31,38 @@ Add utterance to TTS queue and start speaking. Returns promise with utteranceId.
 ```js
 Tts.speak('Hello, world!');
 ```
+
+Additionally, speak() allows to pass platform-specific options 'voiceId' on IOS and 'params' on Android to underlying platform API:
+
+```js
+Tts.speak('Hello, world!', { iosVoiceId: 'com.apple.ttsbundle.Moira-compact' });
+Tts.speak('Hello, world!', { androidParams: { KEY_PARAM_PAN: -1, KEY_PARAM_VOLUME: 0.5, KEY_PARAM_STREAM: 'STREAM_MUSIC' } });
+```
+
+For more detail on `androidParams` properties, please take a look at [official android documentation](https://developer.android.com/reference/android/speech/tts/TextToSpeech.Engine.html). Please note that there are still unsupported key with this wrapper library such as `KEY_PARAM_SESSION_ID`. The following are brief summarization of currently implemented keys:
+
+- `KEY_PARAM_PAN` ranges from `-1` to `+1`. 
+
+- `KEY_PARAM_VOLUME` ranges from `0` to `1`, where 0 means silence. Note that `1` is a default value for Android.
+
+- For `KEY_PARAM_STREAM` property, you can currently use one of `STREAM_ALARM`, `STREAM_DTMF`, `STREAM_MUSIC`, `STREAM_NOTIFICATION`, `STREAM_RING`, `STREAM_SYSTEM`, `STREAM_VOICE_CALL`,
+
 Stop speaking and flush the TTS queue.
 
 ```js
 Tts.stop();
+```
+
+### Waiting for initialization
+
+On some platforms it could take some time to initialize TTS engine, and Tts.speak() will fail to speak until the engine is ready.
+
+To wait for successfull initialization you could use getInitStatus() call.
+
+```js
+Tts.getInitStatus().then(() => {
+  Tts.speak('Hello, world!');
+});
 ```
 
 ### Ducking
@@ -55,10 +84,21 @@ Tts.voices().then(voices => console.log(voices));
 
 // Prints:
 //
-// [ { id: 'com.apple.ttsbundle.Moira-compact', name: 'Moira', language: 'en-IE' },
+// [ { id: 'com.apple.ttsbundle.Moira-compact', name: 'Moira', language: 'en-IE', quality: 300 },
 // ...
 // { id: 'com.apple.ttsbundle.Samantha-compact', name: 'Samantha', language: 'en-US' } ]
 ```
+
+|Voice field|Description|
+|-----|-------|
+|id   |Unique voice identifier (e.g. `com.apple.ttsbundle.Moira-compact`)|
+|name |Name of the voice *(iOS only)*|
+|language|BCP-47 language code (e.g. 'en-US')|
+|quality|Voice quality (300 = normal, 500 = enhanced/very high)|
+|latency|Expected synthesizer latency (100 = very low, 500 = very high) *(Android only)*|
+|networkConnectionRequired|True when the voice requires an active network connection *(Android only)*|
+|notInstalled|True when the voice may need to download additional data to be fully functional *(Android only)*|
+
 
 ### Set default Language
 
@@ -109,6 +149,37 @@ Tts.addEventListener('tts-start', (event) => console.log("start", event));
 Tts.addEventListener('tts-finish', (event) => console.log("finish", event));
 Tts.addEventListener('tts-cancel', (event) => console.log("cancel", event));
 ```
+
+### Install (additional) language data
+
+Shows the Android Activity to install additional language/voice data.
+
+```js
+Tts.requestInstallData();
+```
+
+## Troubleshooting
+
+### No text to speech engine installed on Android
+
+On Android, it may happen that the Text-to-Speech engine is not (yet) installed on the phone.
+When this is the case, `Tts.getInitStatus()` returns an error with code `no_engine`.
+You can use the following code to request the installation of the default Google Text to Speech App.
+The app will need to be restarted afterwards before the changes take affect.
+
+```js
+Tts.getInitStatus().then(() => {
+  // ...
+}, (err) => {
+  if (err.code === 'no_engine') {
+    Tts.requestInstallEngine();
+  }
+});
+```
+
+## Example
+
+There is an example project which shows use of react-native-tts on Android/iOS: https://github.com/themostaza/react-native-tts-example
 
 ## License
 

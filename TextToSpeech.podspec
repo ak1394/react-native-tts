@@ -1,13 +1,13 @@
 Pod::Spec.new do |s|
   s.name         = "TextToSpeech"
-  s.version      = "1.4.1"
+  s.version      = "2.0.0"
   s.summary      = "React Native Text-To-Speech library for Android and iOS"
 
   s.homepage     = "https://github.com/ak1394/react-native-tts"
 
   s.license      = "MIT"
   s.authors      = "Anton Krasovsky"
-  s.platform     = :ios, "7.0"
+  s.platform     = :ios, "9.0"
 
   s.source       = { :git => "https://github.com/ak1394/react-native-tts.git" }
 

@@ -35,6 +35,11 @@ RCT_EXPORT_MODULE()
     return self;
 }
 
++ (BOOL)requiresMainQueueSetup
+{
+    return YES;
+}
+
 RCT_EXPORT_METHOD(speak:(NSString *)text
                   voice:(NSString *)voice
                   resolve:(RCTPromiseResolveBlock)resolve
@@ -69,7 +74,7 @@ RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)re
 {
     AVSpeechBoundary boundary;
 
-    if(onWordBoundary != NULL && *onWordBoundary) {
+    if(onWordBoundary != NULL && onWordBoundary) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;
@@ -84,7 +89,7 @@ RCT_EXPORT_METHOD(pause:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)r
 {
     AVSpeechBoundary boundary;
 
-    if(onWordBoundary != NULL && *onWordBoundary) {
+    if(onWordBoundary != NULL && onWordBoundary) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;
@@ -179,7 +184,12 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
     NSMutableArray *voices = [NSMutableArray new];
     
     for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
-        [voices addObject:@{@"id": voice.identifier, @"name": voice.name, @"language": voice.language}];
+        [voices addObject:@{
+            @"id": voice.identifier,
+            @"name": voice.name,
+            @"language": voice.language,
+            @"quality": (voice.quality == AVSpeechSynthesisVoiceQualityEnhanced) ? @500 : @300
+        }];
     }
     
     resolve(voices);

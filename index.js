@@ -7,6 +7,27 @@ class Tts extends NativeEventEmitter {
     super(TextToSpeech);
   }
 
+  getInitStatus() {
+    if (Platform.OS === 'ios') {
+      return Promise.resolve(true);
+    }
+    return TextToSpeech.getInitStatus();
+  }
+
+  requestInstallEngine() {
+    if (Platform.OS === 'ios') {
+      return Promise.resolve(true);
+    }
+    return TextToSpeech.requestInstallEngine();
+  }
+
+  requestInstallData() {
+    if (Platform.OS === 'ios') {
+      return Promise.resolve(true);
+    }
+    return TextToSpeech.requestInstallData(); 
+  }
+
   setDucking(enabled) {
     return TextToSpeech.setDucking(enabled);
   }
@@ -31,11 +52,20 @@ class Tts extends NativeEventEmitter {
     return TextToSpeech.voices();
   }
 
-  speak(utterance, voiceId) {
-    if (Platform.OS === 'ios') {
-      return TextToSpeech.speak(utterance, voiceId);
+  speak(utterance, options = {}) {
+    // compatibility with old-style voiceId argument passing
+    if (typeof options === 'string') {
+      if (Platform.OS === 'ios') {
+        return TextToSpeech.speak(utterance, options);
+      } else {
+        return TextToSpeech.speak(utterance, {});
+      }
     } else {
-      return TextToSpeech.speak(utterance);
+      if (Platform.OS === 'ios') {
+        return TextToSpeech.speak(utterance, options.iosVoiceId);
+      } else {
+        return TextToSpeech.speak(utterance, options.androidParams || {});
+      }
     }
   }
 
@@ -51,12 +81,14 @@ class Tts extends NativeEventEmitter {
     if (Platform.OS === 'ios') {
       return TextToSpeech.pause(onWordBoundary);
     }
+    return null;
   }
 
   resume() {
     if (Platform.OS === 'ios') {
       return TextToSpeech.resume();
     }
+    return null;
   }
 
   addEventListener(type, handler) {
