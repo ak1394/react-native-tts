@@ -248,9 +248,4 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
     [self sendEventWithName:@"tts-cancel" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
-+ (BOOL)requiresMainQueueSetup
-{
-    return YES;
-}
-
 @end
