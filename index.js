@@ -25,7 +25,7 @@ class Tts extends NativeEventEmitter {
     if (Platform.OS === 'ios') {
       return Promise.resolve(true);
     }
-    return TextToSpeech.requestInstallData(); 
+    return TextToSpeech.requestInstallData();
   }
 
   setDucking(enabled) {
@@ -46,6 +46,12 @@ class Tts extends NativeEventEmitter {
 
   setDefaultLanguage(language) {
     return TextToSpeech.setDefaultLanguage(language);
+  }
+
+  setIgnoreSilentSwitch(ignoreSilentSwitch) {
+    if (Platform.OS === "ios" && ignoreSilentSwitch) {
+      return TextToSpeech.setIgnoreSilentSwitch(ignoreSilentSwitch);
+    }
   }
 
   voices() {
