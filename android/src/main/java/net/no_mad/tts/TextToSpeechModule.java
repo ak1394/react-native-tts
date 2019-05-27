@@ -16,6 +16,7 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
@@ -27,10 +28,15 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private AudioManager audioManager;
     private AudioManager.OnAudioFocusChangeListener afChangeListener;
 
+    private Map<String, Locale> localeCountryMap;
+    private Map<String, Locale> localeLanguageMap;
+
     public TextToSpeechModule(ReactApplicationContext reactContext) {
         super(reactContext);
         audioManager = (AudioManager) reactContext.getApplicationContext().getSystemService(reactContext.AUDIO_SERVICE);
         initStatusPromises = new ArrayList<Promise>();
+        //initialize ISO3, ISO2 languague country code mapping.
+        initCountryLanguageCodeMapping();
 
         tts = new TextToSpeech(getReactApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
@@ -75,6 +81,29 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 sendEvent("tts-cancel", utteranceId);
             }
         });
+    }
+
+    private void initCountryLanguageCodeMapping() {
+        String[] countries = Locale.getISOCountries();
+        localeCountryMap = new HashMap<String, Locale>(countries.length);
+        for (String country: countries) {
+            Locale locale = new Locale("", country);
+            localeCountryMap.put(locale.getISO3Country().toUpperCase(), locale);
+        }
+        String[] languages = Locale.getISOLanguages();
+        localeLanguageMap = new HashMap<String, Locale>(languages.length);
+        for (String language: languages) {
+            Locale locale = new Locale(language);
+            localeLanguageMap.put(locale.getISO3Language(), locale);
+        }
+    }
+
+    private String iso3CountryCodeToIso2CountryCode(String iso3CountryCode) {
+        return localeCountryMap.get(iso3CountryCode).getCountry();
+    }
+
+    private String iso3LanguageCodeToIso2LanguageCode(String iso3LanguageCode) {
+        return localeLanguageMap.get(iso3LanguageCode).getLanguage();
     }
 
     private void resolveReadyPromise(Promise promise) {
@@ -262,7 +291,14 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                     WritableMap voiceMap = Arguments.createMap();
                     voiceMap.putString("id", voice.getName());
                     voiceMap.putString("name", voice.getName());
-                    voiceMap.putString("language", voice.getLocale().toLanguageTag());
+
+                    String language = iso3LanguageCodeToIso2LanguageCode(voice.getLocale().getISO3Language());
+                    String country = voice.getLocale().getISO3Country();
+                    if(country != "") {
+                        language += "-" + iso3CountryCodeToIso2CountryCode(country);
+                    }
+
+                    voiceMap.putString("language", language);
                     voiceMap.putInt("quality", voice.getQuality());
                     voiceMap.putInt("latency", voice.getLatency());
                     voiceMap.putBoolean("networkConnectionRequired", voice.isNetworkConnectionRequired());
