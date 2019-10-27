@@ -340,6 +340,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
         if(isPackageInstalled(engineName)) {
             ready = null;
+            onCatalystInstanceDestroy();
             tts = new TextToSpeech(getReactApplicationContext(), new TextToSpeech.OnInitListener() {
                 @Override
                 public void onInit(int status) {
