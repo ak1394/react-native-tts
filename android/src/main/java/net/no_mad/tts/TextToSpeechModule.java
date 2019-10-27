@@ -10,6 +10,9 @@ import android.net.Uri;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.speech.tts.Voice;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import com.facebook.react.bridge.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
@@ -51,36 +54,43 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             }
         });
 
-        tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-            @Override
-            public void onStart(String utteranceId) {
-                sendEvent("tts-start", utteranceId);
-            }
+        setUtteranceProgress();
+    }
 
-            @Override
-            public void onDone(String utteranceId) {
-                if(ducking) {
-                    audioManager.abandonAudioFocus(afChangeListener);
+    private void setUtteranceProgress() {
+        if(tts != null)
+        {
+            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                @Override
+                public void onStart(String utteranceId) {
+                    sendEvent("tts-start", utteranceId);
                 }
-                sendEvent("tts-finish", utteranceId);
-            }
 
-            @Override
-            public void onError(String utteranceId) {
-                if(ducking) {
-                    audioManager.abandonAudioFocus(afChangeListener);
+                @Override
+                public void onDone(String utteranceId) {
+                    if(ducking) {
+                        audioManager.abandonAudioFocus(afChangeListener);
+                    }
+                    sendEvent("tts-finish", utteranceId);
                 }
-                sendEvent("tts-error", utteranceId);
-            }
 
-            @Override
-            public void onStop(String utteranceId, boolean interrupted) {
-                if(ducking) {
-                    audioManager.abandonAudioFocus(afChangeListener);
+                @Override
+                public void onError(String utteranceId) {
+                    if(ducking) {
+                        audioManager.abandonAudioFocus(afChangeListener);
+                    }
+                    sendEvent("tts-error", utteranceId);
                 }
-                sendEvent("tts-cancel", utteranceId);
-            }
-        });
+
+                @Override
+                public void onStop(String utteranceId, boolean interrupted) {
+                    if(ducking) {
+                        audioManager.abandonAudioFocus(afChangeListener);
+                    }
+                    sendEvent("tts-cancel", utteranceId);
+                }
+            });
+        }
     }
 
     private void initCountryLanguageCodeMapping() {
@@ -157,6 +167,16 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 promise.reject("error", "Unknown error code: " + statusCode);
                 break;
           }
+    }
+
+    private boolean isPackageInstalled(String packageName) {
+        PackageManager pm = getReactApplicationContext().getPackageManager();
+        try {
+            PackageInfo pi = pm.getPackageInfo(packageName, 0);
+            return true;
+        } catch (NameNotFoundException e) {
+            return false;
+        }
     }
 
     @Override
@@ -312,6 +332,58 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         }
 
         promise.resolve(voiceArray);
+    }
+
+    @ReactMethod
+    public void setDefaultEngine(String engineName, Promise promise) {
+        if(notReady(promise)) return;
+
+        if(isPackageInstalled(engineName)) {
+            ready = null;
+            tts = new TextToSpeech(getReactApplicationContext(), new TextToSpeech.OnInitListener() {
+                @Override
+                public void onInit(int status) {
+                    synchronized(initStatusPromises) {
+                        ready = (status == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
+                        for(Promise p: initStatusPromises) {
+                            resolveReadyPromise(p);
+                        }
+                        initStatusPromises.clear();
+                    }
+                }
+            }, engineName);
+
+            setUtteranceProgress();
+        } else {
+            promise.reject("not_found", "The selected engine was not found");
+        }
+    }
+
+    @ReactMethod
+    public void engines(Promise promise) {
+        if(notReady(promise)) return;
+
+        WritableArray engineArray = Arguments.createArray();
+
+        if (Build.VERSION.SDK_INT >= 14) {
+            try {
+                String defaultEngineName = tts.getDefaultEngine();
+                for(TextToSpeech.EngineInfo engine: tts.getEngines()) {
+                    WritableMap engineMap = Arguments.createMap();
+
+                    engineMap.putString("name", engine.name);
+                    engineMap.putString("label", engine.label);
+                    engineMap.putBoolean("default", engine.name.equals(defaultEngineName));
+                    engineMap.putInt("icon", engine.icon);
+
+                    engineArray.pushMap(engineMap);
+                }
+            } catch (Exception e) {
+                promise.reject("error", "Unknown error code");
+            }
+        }
+
+        promise.resolve(engineArray);
     }
 
     @ReactMethod
