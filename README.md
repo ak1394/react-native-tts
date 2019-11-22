@@ -162,6 +162,17 @@ Tts.addEventListener('tts-finish', (event) => console.log("finish", event));
 Tts.addEventListener('tts-cancel', (event) => console.log("cancel", event));
 ```
 
+### Support for multiple TTS engines
+
+Platforms: Android
+
+Functions to list available TTS engines and set an engine to use.
+
+```js
+Tts.engines().then(engines => console.log(engines));
+Tts.setDefaultEngine('engineName');
+```
+
 ### Install (additional) language data
 
 Shows the Android Activity to install additional language/voice data.
