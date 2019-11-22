@@ -32,6 +32,13 @@ class Tts extends NativeEventEmitter {
     return TextToSpeech.setDucking(enabled);
   }
 
+  setDefaultEngine(engineName) {
+    if (Platform.OS === 'ios') {
+      return Promise.resolve(true);
+    }
+    return TextToSpeech.setDefaultEngine(engineName);
+  }
+
   setDefaultVoice(voiceId) {
     return TextToSpeech.setDefaultVoice(voiceId);
   }
@@ -49,13 +56,20 @@ class Tts extends NativeEventEmitter {
   }
 
   setIgnoreSilentSwitch(ignoreSilentSwitch) {
-    if (Platform.OS === "ios" && ignoreSilentSwitch) {
+    if (Platform.OS === 'ios' && ignoreSilentSwitch) {
       return TextToSpeech.setIgnoreSilentSwitch(ignoreSilentSwitch);
     }
   }
 
   voices() {
     return TextToSpeech.voices();
+  }
+
+  engines() {
+    if (Platform.OS === 'ios') {
+      return Promise.resolve(true);
+    }
+    return TextToSpeech.engines();
   }
 
   speak(utterance, options = {}) {
