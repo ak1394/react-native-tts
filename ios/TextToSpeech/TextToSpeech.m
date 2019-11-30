@@ -56,7 +56,7 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     
     AVSpeechUtterance *utterance = [[AVSpeechUtterance alloc] initWithString:text];
 
-    NSString* voice = [params valueForKey:@"voice"];
+    NSString* voice = [params valueForKey:@"iosVoiceId"];
     if(voice) {
         utterance.voice = [AVSpeechSynthesisVoice voiceWithIdentifier:voice];
     } else if (_defaultVoice) {
