@@ -335,7 +335,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void setDefaultEngine(String engineName, Promise promise) {
+    public void setDefaultEngine(String engineName, final Promise promise) {
         if(notReady(promise)) return;
 
         if(isPackageInstalled(engineName)) {
@@ -350,6 +350,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                             resolveReadyPromise(p);
                         }
                         initStatusPromises.clear();
+                        promise.resolve(ready);
                     }
                 }
             }, engineName);
