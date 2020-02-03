@@ -112,7 +112,7 @@ class Tts extends NativeEventEmitter {
   }
 
   addEventListener(type, handler) {
-    this.addListener(type, handler);
+    return this.addListener(type, handler);
   }
 
   removeEventListener(type, handler) {
