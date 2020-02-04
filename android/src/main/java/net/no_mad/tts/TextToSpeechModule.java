@@ -341,8 +341,9 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     public void setDefaultEngine(String engineName, final Promise promise) {
         if(notReady(promise)) return;
 
-        if (engineName.equals(currentEngineName)) {
-            // The engine we're going to activate is already active, return immediately
+        if (engineName == null || engineName.equals(currentEngineName)) {
+            // The engine we're going to activate is already active (or
+            // no engine specified at all): return immediately
             promise.resolve(ready);
             return;
         }
