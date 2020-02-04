@@ -44,9 +44,10 @@ RCT_EXPORT_MODULE()
 }
 
 RCT_EXPORT_METHOD(speak:(NSString *)text
-                  voice:(NSString *)voice
+                  params:(NSDictionary *)params
                   resolve:(RCTPromiseResolveBlock)resolve
-                  reject:(RCTPromiseRejectBlock)reject)
+                  reject:(RCTPromiseRejectBlock)reject
+                 )
 {
     if(!text) {
         reject(@"no_text", @"No text to speak", nil);
@@ -55,6 +56,7 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     
     AVSpeechUtterance *utterance = [[AVSpeechUtterance alloc] initWithString:text];
 
+    NSString* voice = [params valueForKey:@"iosVoiceId"];
     if(voice) {
         utterance.voice = [AVSpeechSynthesisVoice voiceWithIdentifier:voice];
     } else if (_defaultVoice) {
@@ -67,6 +69,11 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     
     if (_defaultPitch) {
         utterance.pitchMultiplier = _defaultPitch;
+    }
+    
+    NSNumber* volume = [params valueForKey:@"volume"];
+    if(volume) {
+        utterance.volume = [volume floatValue];
     }
     
     if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
