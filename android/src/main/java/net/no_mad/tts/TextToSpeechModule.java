@@ -47,7 +47,6 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             @Override
             public void onInit(int status) {
                 synchronized(initStatusPromises) {
-                    currentEngineName = tts.getDefaultEngine();
                     ready = (status == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
                     for(Promise p: initStatusPromises) {
                         resolveReadyPromise(p);
@@ -56,6 +55,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 }
             }
         });
+        currentEngineName = tts.getDefaultEngine();
 
         setUtteranceProgress();
     }
