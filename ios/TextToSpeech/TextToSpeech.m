@@ -62,7 +62,15 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
         utterance.voice = _defaultVoice;
     }
 
-    if (_defaultRate) {
+    float rate = [[params valueForKey:@"rate"] floatValue];
+    if (rate) {
+        if(rate > AVSpeechUtteranceMinimumSpeechRate && rate < AVSpeechUtteranceMaximumSpeechRate) {
+            utterance.rate = rate;
+        } else {
+            reject(@"bad_rate", @"Wrong rate value", nil);
+            return;
+        }
+    } else if (_defaultRate) {
         utterance.rate = _defaultRate;
     }
 
