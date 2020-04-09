@@ -32,11 +32,22 @@ Add utterance to TTS queue and start speaking. Returns promise with utteranceId.
 Tts.speak('Hello, world!');
 ```
 
-Additionally, speak() allows to pass platform-specific options 'voiceId' on IOS and 'params' on Android to underlying platform API:
+Additionally, speak() allows to pass platform-specific options.
 
 ```js
-Tts.speak('Hello, world!', { iosVoiceId: 'com.apple.ttsbundle.Moira-compact' });
-Tts.speak('Hello, world!', { androidParams: { KEY_PARAM_PAN: -1, KEY_PARAM_VOLUME: 0.5, KEY_PARAM_STREAM: 'STREAM_MUSIC' } });
+// IOS
+Tts.speak('Hello, world!', {
+  iosVoiceId: 'com.apple.ttsbundle.Moira-compact',
+  rate: 0.5,
+});
+// Android
+Tts.speak('Hello, world!', {
+  androidParams: {
+    KEY_PARAM_PAN: -1,
+    KEY_PARAM_VOLUME: 0.5,
+    KEY_PARAM_STREAM: 'STREAM_MUSIC',
+  },
+});
 ```
 
 For more detail on `androidParams` properties, please take a look at [official android documentation](https://developer.android.com/reference/android/speech/tts/TextToSpeech.Engine.html). Please note that there are still unsupported key with this wrapper library such as `KEY_PARAM_SESSION_ID`. The following are brief summarization of currently implemented keys:
@@ -46,6 +57,11 @@ For more detail on `androidParams` properties, please take a look at [official a
 - `KEY_PARAM_VOLUME` ranges from `0` to `1`, where 0 means silence. Note that `1` is a default value for Android.
 
 - For `KEY_PARAM_STREAM` property, you can currently use one of `STREAM_ALARM`, `STREAM_DTMF`, `STREAM_MUSIC`, `STREAM_NOTIFICATION`, `STREAM_RING`, `STREAM_SYSTEM`, `STREAM_VOICE_CALL`,
+
+The supported options for IOS are:
+
+- `iosVoiceId` which voice to use, check [voices()](#list-voices) for available values
+- `rate` which speech rate this line should be spoken with. Will override [default rate](#set-default-speech-rate) if set for this utterance.
 
 Stop speaking and flush the TTS queue.
 
