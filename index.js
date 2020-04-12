@@ -68,7 +68,7 @@ class Tts extends NativeEventEmitter {
 
   engines() {
     if (Platform.OS === 'ios') {
-      return Promise.resolve(true);
+      return Promise.resolve([]);
     }
     return TextToSpeech.engines();
   }
