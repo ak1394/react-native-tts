@@ -102,14 +102,14 @@ class Tts extends NativeEventEmitter {
     if (Platform.OS === 'ios') {
       return TextToSpeech.pause(onWordBoundary);
     }
-    return null;
+    return Promise.resolve(false);
   }
 
   resume() {
     if (Platform.OS === 'ios') {
       return TextToSpeech.resume();
     }
-    return null;
+    return Promise.resolve(false);
   }
 
   addEventListener(type, handler) {
