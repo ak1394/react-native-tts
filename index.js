@@ -56,7 +56,7 @@ class Tts extends NativeEventEmitter {
   }
 
   setIgnoreSilentSwitch(ignoreSilentSwitch) {
-    if (platform.OS === 'ios') {
+    if (Platform.OS === 'ios') {
       return TextToSpeech.setIgnoreSilentSwitch(ignoreSilentSwitch);
     }
     return Promise.resolve(true);
