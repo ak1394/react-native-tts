@@ -199,18 +199,17 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     public void speak(String utterance, ReadableMap params, Promise promise) {
         if(notReady(promise)) return;
 
-        if(ducking) {
-            // Request audio focus for playback
-            int amResult = audioManager.requestAudioFocus(afChangeListener,
-                                                          // Use the music stream.
-                                                          AudioManager.STREAM_MUSIC,
-                                                          // Request permanent focus.
-                                                          AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+        int durationHint = ducking ? AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK : AudioManager.AUDIOFOCUS_GAIN;
+        // Request audio focus for playback
+        int amResult = audioManager.requestAudioFocus(afChangeListener,
+                                                        // Use the music stream.
+                                                        AudioManager.STREAM_MUSIC,
+                                                        // Request permanent focus.
+                                                        durationHint);
 
-            if(amResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                promise.reject("Android AudioManager error, failed to request audio focus");
-                return;
-            }
+        if(amResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            promise.reject("Android AudioManager error, failed to request audio focus");
+            return;
         }
 
         String utteranceId = Integer.toString(utterance.hashCode());
