@@ -256,7 +256,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if(notReady(promise)) return;
 
         if(skipTransform) {
-            promise.resolve(tts.setSpeechRate(rate));
+            int result = tts.setSpeechRate(rate);
+            resolvePromiseWithStatusCode(result, promise);
         } else {
             // normalize android rate
             // rate value will be in the range 0.0 to 1.0
@@ -265,15 +266,16 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             float androidRate = rate.floatValue() < 0.5f ?
                     rate.floatValue() * 2 : // linear fit {0, 0}, {0.25, 0.5}, {0.5, 1}
                     rate.floatValue() * 4 - 1; // linear fit {{0.5, 1}, {0.75, 2}, {1, 3}}
-            promise.resolve(tts.setSpeechRate(androidRate));
+            int result = tts.setSpeechRate(androidRate);
+            resolvePromiseWithStatusCode(result, promise);
         }
     }
 
     @ReactMethod
     public void setDefaultPitch(Float pitch, Promise promise) {
         if(notReady(promise)) return;
-
-        promise.resolve(tts.setPitch(pitch));
+        int result = tts.setPitch(pitch);
+        resolvePromiseWithStatusCode(result, promise);
     }
 
     @ReactMethod
@@ -393,7 +395,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if(notReady(promise)) return;
 
         int result = tts.stop();
-        resolvePromiseWithStatusCode(result, promise);
+        boolean resultValue = (status == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
+        promise.resolve(result);
     }
 
     @ReactMethod
