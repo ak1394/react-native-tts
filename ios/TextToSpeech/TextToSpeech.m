@@ -52,7 +52,7 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
         reject(@"no_text", @"No text to speak", nil);
         return;
     }
-    
+
     AVSpeechUtterance *utterance = [[AVSpeechUtterance alloc] initWithString:text];
 
     if(voice) {
@@ -64,15 +64,22 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     if (_defaultRate) {
         utterance.rate = _defaultRate;
     }
-    
+
     if (_defaultPitch) {
         utterance.pitchMultiplier = _defaultPitch;
     }
-    
-    if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
-        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
-    } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
-        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
+
+    // ensure that the audio session is always configured correct for TTS usage before playback
+    // starts, another audio source with different setup may have been active just before this
+    if (_ducking) {
+      // Set both DuckOthers and InterruptSpokenAudioAndMixwithOthers for proper interaction with all types of audio that can be active
+      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
+                                       withOptions:AVAudioSessionCategoryOptionDuckOthers | AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
+                                             error:nil];
+    } else {
+      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
+                                       withOptions:AVAudioSessionCategoryOptionMixWithOthers
+                                             error:nil];
     }
 
     [self.synthesizer speakUtterance:utterance];
@@ -122,14 +129,11 @@ RCT_EXPORT_METHOD(setDucking:(BOOL *)ducking
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
     _ducking = ducking;
-    
-    if(ducking) {
-        AVAudioSession *session = [AVAudioSession sharedInstance];
-        [session setCategory:AVAudioSessionCategoryPlayback
-                 withOptions:AVAudioSessionCategoryOptionDuckOthers
-                       error:nil];
-    }
-    
+
+    // do not set the audio session category here as this is only set just
+    // before playback to ensure audio session is setup correctly when
+    // another audio source that was active before has different setup
+
     resolve(@"success");
 }
 
@@ -201,7 +205,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
     NSMutableArray *voices = [NSMutableArray new];
-    
+
     for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
         [voices addObject:@{
             @"id": voice.identifier,
@@ -210,7 +214,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
             @"quality": (voice.quality == AVSpeechSynthesisVoiceQualityEnhanced) ? @500 : @300
         }];
     }
-    
+
     resolve(voices);
 }
 
@@ -219,25 +223,27 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
     if(_ducking) {
         [[AVAudioSession sharedInstance] setActive:YES error:nil];
     }
-    
+
     [self sendEventWithName:@"tts-start" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didFinishSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+        // set option NotifyOthersOnDeactivation to ensure all audio that can be restarted will restart
+        [[AVAudioSession sharedInstance] setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
     }
-    
+
     [self sendEventWithName:@"tts-finish" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didPauseSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+        // set option NotifyOthersOnDeactivation to ensure all audio that can be restarted will restart
+        [[AVAudioSession sharedInstance] setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
     }
-    
+
     [self sendEventWithName:@"tts-pause" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
@@ -246,7 +252,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
     if(_ducking) {
         [[AVAudioSession sharedInstance] setActive:YES error:nil];
     }
-    
+
     [self sendEventWithName:@"tts-resume" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
@@ -261,9 +267,10 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didCancelSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+        // set option NotifyOthersOnDeactivation to ensure all audio that can be restarted will restart
+        [[AVAudioSession sharedInstance] setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
     }
-    
+
     [self sendEventWithName:@"tts-cancel" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
 }
 
