@@ -1,6 +1,6 @@
 # React Native TTS
 
-React Native TTS is a text-to-speech library for [React Native](https://facebook.github.io/react-native/) on iOS and Android.
+React Native TTS is a text-to-speech library for [React Native](https://facebook.github.io/react-native/) on iOS, Android and Windows.
 
 ## Documentation
 
@@ -23,6 +23,23 @@ react-native link react-native-tts
 ```js
 import Tts from 'react-native-tts';
 ```
+
+#### Windows
+
+1. In `windows/myapp.sln` add the `RNTTS` project to your solution:
+
+   - Open the solution in Visual Studio 2019
+   - Right-click Solution icon in Solution Explorer > Add > Existing Project
+   - Select `node_modules\react-native-tts\windows\RNTTS\RNTTS.vcxproj`
+
+2. In `windows/myapp/myapp.vcxproj` add a reference to `RNTTS` to your main application project. From Visual Studio 2019:
+
+   - Right-click main application project > Add > Reference...
+   - Check `RNTTS` from Solution Projects.
+
+3. In `pch.h` add `#include "winrt/RNTTS.h"`.
+
+4. In `app.cpp` add `PackageProviders().Append(winrt::RNTTS::ReactPackageProvider());` before `InitializeComponent();`.
 
 ### Speaking
 
@@ -85,6 +102,8 @@ Tts.getInitStatus().then(() => {
 
 Enable lowering other applications output level while speaking (also referred to as "ducking").
 
+*(not supported on Windows)*
+
 ```js
 Tts.setDucking(true);
 ```
@@ -140,7 +159,7 @@ Sets default speech rate. The rate parameter is a float where where 0.01 is a sl
 Tts.setDefaultRate(0.6);
 ```
 
-There is a significant difference to how the rate value is interpreted by iOS and Android native TTS APIs. To provide unified cross-platform behaviour, translation is applied to the rate value. However, if you want to turn off the translation, you can provide optional `skipTransform` parameter to `Tts.setDefaultRate()` to pass rate value unmodified.
+There is a significant difference to how the rate value is interpreted by iOS, Android and Windows native TTS APIs. To provide unified cross-platform behaviour, translation is applied to the rate value. However, if you want to turn off the translation, you can provide optional `skipTransform` parameter to `Tts.setDefaultRate()` to pass rate value unmodified.
 
 Do not translate rate parameter:
 
@@ -150,7 +169,7 @@ Tts.setDefaultRate(0.6, true);
 
 ### Set default Pitch
 
-Sets default pitch. The pitch parameter is a float where where 1.0 is a normal pitch. On iOS min pitch is 0.5 and max pitch is 2.0
+Sets default pitch. The pitch parameter is a float where where 1.0 is a normal pitch. On iOS min pitch is 0.5 and max pitch is 2.0. On Windows, min pitch is 0.0 and max pitch is 2.0.
 
 ```js
 Tts.setDefaultPitch(1.5);
@@ -218,7 +237,7 @@ Tts.getInitStatus().then(() => {
 
 ## Example
 
-There is an example project which shows use of react-native-tts on Android/iOS: https://github.com/themostaza/react-native-tts-example
+There is an example project which shows use of react-native-tts on Android/iOS/Windows: https://github.com/themostaza/react-native-tts-example
 
 ## License
 

@@ -8,32 +8,35 @@ class Tts extends NativeEventEmitter {
   }
 
   getInitStatus() {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'windows') {
       return Promise.resolve(true);
     }
     return TextToSpeech.getInitStatus();
   }
 
   requestInstallEngine() {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'windows') {
       return Promise.resolve(true);
     }
     return TextToSpeech.requestInstallEngine();
   }
 
   requestInstallData() {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'windows') {
       return Promise.resolve(true);
     }
     return TextToSpeech.requestInstallData();
   }
 
   setDucking(enabled) {
+    if (Platform.OS === 'windows') {
+      return Promise.resolve(true);
+    }
     return TextToSpeech.setDucking(enabled);
   }
 
   setDefaultEngine(engineName) {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'windows') {
       return Promise.resolve(true);
     }
     return TextToSpeech.setDefaultEngine(engineName);
@@ -56,7 +59,7 @@ class Tts extends NativeEventEmitter {
   }
 
   setIgnoreSilentSwitch(ignoreSilentSwitch) {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'windows') {
       return TextToSpeech.setIgnoreSilentSwitch(ignoreSilentSwitch);
     }
     return Promise.resolve(true);
@@ -67,7 +70,7 @@ class Tts extends NativeEventEmitter {
   }
 
   engines() {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'windows') {
       return Promise.resolve([]);
     }
     return TextToSpeech.engines();
@@ -82,7 +85,7 @@ class Tts extends NativeEventEmitter {
         return TextToSpeech.speak(utterance, {});
       }
     } else {
-      if (Platform.OS === 'ios') {
+      if (Platform.OS === 'ios' || Platform.OS === 'windows') {
         return TextToSpeech.speak(utterance, options);
       } else {
         return TextToSpeech.speak(utterance, options.androidParams || {});
