@@ -66,7 +66,7 @@ export class ReactNativeTts extends RN.NativeEventEmitter {
   setDefaultPitch: (pitch: number) => Promise<'success'>
   setDefaultLanguage: (language: string) => Promise<'success'>
   setIgnoreSilentSwitch: (ignoreSilentSwitch: boolean) => Promise<boolean>
-  voices: () => Voice[]
+  voices: () => Promise<Voice[]>
   engines: () => Promise<Engine[]>
   /** Read the sentence and return an id for the task. */
   speak: (utterance: string, options?: Options) => string | number
