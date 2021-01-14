@@ -395,8 +395,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if(notReady(promise)) return;
 
         int result = tts.stop();
-        boolean resultValue = (status == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
-        promise.resolve(result);
+        boolean resultValue = (result == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
+        promise.resolve(resultValue);
     }
 
     @ReactMethod
