@@ -22,5 +22,8 @@
   "bugs": {
     "url": "https://github.com/ak1394/react-native-tts/issues"
   },
-  "homepage": "https://github.com/ak1394/react-native-tts#readme"
+  "homepage": "https://github.com/ak1394/react-native-tts#readme",
+  "peerDependencies": {
+    "react-native-windows": ">=0.62"
+  }
 }
