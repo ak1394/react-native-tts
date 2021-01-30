@@ -1,0 +1,34 @@
+{
+  "name": "amuseTts",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "appium": "appium",
+    "start": "node node_modules/react-native/local-cli/cli.js start",
+    "test": "jest",
+    "test:windows": "yarn jest --setupFiles=./jest-setups/jest.setup.windows.js"
+  },
+  "dependencies": {
+    "react": "16.13.1",
+    "react-native": "0.63.4",
+    "react-native-tts": "1.5.0",
+    "react-native-windows": "^0.63.0-0"
+  },
+  "devDependencies": {
+    "appium": "1.18.3",
+    "babel-jest": "^26.6.3",
+    "jest": "23.1.0",
+    "metro-react-native-babel-preset": "^0.64.0",
+    "react-test-renderer": "16.3.1",
+    "selenium-appium": "0.0.15",
+    "selenium-webdriver": "^4.0.0-alpha.8"
+  },
+	"jest": {
+		"preset": "react-native",
+		"transform": {
+			"^.+\\.jsx?$": "<rootDir>/node_modules/react-native/jest/preprocessor.js"
+		},
+		"testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+		"moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"]
+	}
+}
