@@ -11,7 +11,7 @@
   "dependencies": {
     "react": "16.13.1",
     "react-native": "0.63.4",
-    "react-native-tts": "1.5.0",
+    "react-native-tts": "../",
     "react-native-windows": "^0.63.0-0"
   },
   "devDependencies": {
