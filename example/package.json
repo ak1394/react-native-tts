@@ -6,7 +6,8 @@
     "appium": "appium",
     "start": "node node_modules/react-native/local-cli/cli.js start",
     "test": "jest",
-    "test:windows": "yarn jest --setupFiles=./jest-setups/jest.setup.windows.js"
+    "test:windows": "yarn jest --setupFiles=./jest-setups/jest.setup.windows.js --runInBand",
+    "test:windows_nosound_ci": "yarn jest __tests__/TestTTSInit.test.js --setupFiles=./jest-setups/jest.setup.windows.js"
   },
   "dependencies": {
     "react": "16.13.1",
