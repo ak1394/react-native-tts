@@ -177,10 +177,10 @@ void RNTTS::RNTTS::Resume(ReactPromise<JSValue> promise) noexcept
     promise.Resolve("success");
 }
 
-IAsyncAction RNTTS::RNTTS::SpeakAsync(winrt::hstring text, ReactPromise<JSValue> promise) noexcept
+winrt::Windows::Foundation::IAsyncAction RNTTS::RNTTS::SpeakAsync(winrt::hstring text, ReactPromise<JSValue> promise) noexcept
 {
     // Generate the audio stream from plain text.
-    IAsyncOperation<SpeechSynthesisStream> task{ speechSynthesizer.SynthesizeTextToStreamAsync(text) };
+    winrt::Windows::Foundation::IAsyncOperation<SpeechSynthesisStream> task{ speechSynthesizer.SynthesizeTextToStreamAsync(text) };
 
     SpeechSynthesisStream speechStream = co_await task;
 

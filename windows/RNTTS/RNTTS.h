@@ -26,7 +26,7 @@ namespace winrt::RNTTS {
 
     RNTTS();
 
-    IAsyncAction SpeakAsync(winrt::hstring text, ReactPromise<JSValue> promise) noexcept;
+    winrt::Windows::Foundation::IAsyncAction SpeakAsync(winrt::hstring text, ReactPromise<JSValue> promise) noexcept;
     void OnMediaElementStateChanged(MediaPlaybackSession session,
         winrt::Windows::Foundation::IInspectable const& result) noexcept;
 
