@@ -89,6 +89,14 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                     }
                     sendEvent("tts-cancel", utteranceId);
                 }
+
+                @Override
+                public void onRangeStart (String utteranceId, int start, int end, int frame) {
+                  if(ducking) {
+                        audioManager.abandonAudioFocus(afChangeListener);
+                    }
+                    sendEvent("tts-progress", utteranceId);
+                }
             });
         }
     }
