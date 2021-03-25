@@ -92,7 +92,12 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onRangeStart (String utteranceId, int start, int end, int frame) {
-                    sendEvent("tts-progress", utteranceId);
+                    WritableMap params = Arguments.createMap();
+                    params.putString("utteranceId", utteranceId);
+                    params.putInt("start", start);
+                    params.putInt("end", end);
+                    params.putInt("frame", frame);
+                    sendEvent("tts-progress", params);
                 }
             });
         }
@@ -512,6 +517,10 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private void sendEvent(String eventName, String utteranceId) {
         WritableMap params = Arguments.createMap();
         params.putString("utteranceId", utteranceId);
+        sendEvent(eventName, params);
+    }
+
+    private void sendEvent(String eventName, WritableMap params) {
         getReactApplicationContext()
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, params);
