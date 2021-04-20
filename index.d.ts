@@ -41,6 +41,8 @@ export type TtsError = {
   message: string;
 };
 
+export type IOSSilentSwitchBehavior = "inherit" | "ignore" | "obey"
+
 export type Voice = {
   id: string;
   name: string;
@@ -64,7 +66,6 @@ export type AndroidOptions = {
     | "STREAM_VOICE_CALL"
     | "STREAM_SYSTEM"
     | "STREAM_RING"
-    | "STREAM_MUSIC"
     | "STREAM_MUSIC"
     | "STREAM_ALARM"
     | "STREAM_NOTIFICATION"
@@ -94,7 +95,7 @@ export class ReactNativeTts extends RN.NativeEventEmitter {
   setDefaultRate: (rate: number, skipTransform?: boolean) => Promise<"success">;
   setDefaultPitch: (pitch: number) => Promise<"success">;
   setDefaultLanguage: (language: string) => Promise<"success">;
-  setIgnoreSilentSwitch: (ignoreSilentSwitch: boolean) => Promise<boolean>;
+  setIgnoreSilentSwitch: (ignoreSilentSwitch: IOSSilentSwitchBehavior) => Promise<boolean>;
   voices: () => Promise<Voice[]>;
   engines: () => Promise<Engine[]>;
   /** Read the sentence and return an id for the task. */
