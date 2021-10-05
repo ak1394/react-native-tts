@@ -34,6 +34,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private Map<String, Locale> localeCountryMap;
     private Map<String, Locale> localeLanguageMap;
 
+    private String currentEngineName;
+
     public TextToSpeechModule(ReactApplicationContext reactContext) {
         super(reactContext);
         audioManager = (AudioManager) reactContext.getApplicationContext().getSystemService(reactContext.AUDIO_SERVICE);
@@ -45,6 +47,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             @Override
             public void onInit(int status) {
                 synchronized(initStatusPromises) {
+                    currentEngineName = tts.getDefaultEngine();
                     ready = (status == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
                     for(Promise p: initStatusPromises) {
                         resolveReadyPromise(p);
@@ -350,8 +353,14 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     public void setDefaultEngine(String engineName, final Promise promise) {
         if(notReady(promise)) return;
 
+        if (engineName.equals(currentEngineName)) {
+            promise.resolve(ready);
+            return;
+        }
+
         if(isPackageInstalled(engineName)) {
             ready = null;
+            currentEngineName = engineName;
             onCatalystInstanceDestroy();
             tts = new TextToSpeech(getReactApplicationContext(), new TextToSpeech.OnInitListener() {
                 @Override
