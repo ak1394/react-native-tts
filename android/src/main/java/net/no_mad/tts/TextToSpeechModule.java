@@ -1,5 +1,7 @@
 package net.no_mad.tts;
 
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,8 +30,10 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private ArrayList<Promise> initStatusPromises;
 
     private boolean ducking = false;
+    private int audioFocus = AudioManager.AUDIOFOCUS_REQUEST_FAILED;
     private AudioManager audioManager;
-    private AudioManager.OnAudioFocusChangeListener afChangeListener;
+    private AudioFocusRequest audioFocusRequest;
+    private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
 
     private Map<String, Locale> localeCountryMap;
     private Map<String, Locale> localeLanguageMap;
@@ -39,6 +43,16 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     public TextToSpeechModule(ReactApplicationContext reactContext) {
         super(reactContext);
         audioManager = (AudioManager) reactContext.getApplicationContext().getSystemService(reactContext.AUDIO_SERVICE);
+        audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int focusChange) {
+                if (focusChange < 0) {
+                    // Loss of Focus, stop TTS which will abandon focus (TTS should not be restarted)
+                    tts.stop();
+                }
+            }
+        };
+
         initStatusPromises = new ArrayList<Promise>();
         //initialize ISO3, ISO2 languague country code mapping.
         initCountryLanguageCodeMapping();
@@ -66,30 +80,29 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override
                 public void onStart(String utteranceId) {
+                    // Request audio focus here instead of earlier on when requesting to speak an utterance.
+                    // This avoids in case of a queued speak requests that audio focus is requested before
+                    // the still playing sentence will abandon focus (and stops ducking music). This ensures
+                    // that each queued sentence will have a proper request/abandon sequence and duck music.
+                    requestFocus();
                     sendEvent("tts-start", utteranceId);
                 }
 
                 @Override
                 public void onDone(String utteranceId) {
-                    if(ducking) {
-                        audioManager.abandonAudioFocus(afChangeListener);
-                    }
+                    abandonFocus();
                     sendEvent("tts-finish", utteranceId);
                 }
 
                 @Override
                 public void onError(String utteranceId) {
-                    if(ducking) {
-                        audioManager.abandonAudioFocus(afChangeListener);
-                    }
+                    abandonFocus();
                     sendEvent("tts-error", utteranceId);
                 }
 
                 @Override
                 public void onStop(String utteranceId, boolean interrupted) {
-                    if(ducking) {
-                        audioManager.abandonAudioFocus(afChangeListener);
-                    }
+                    abandonFocus();
                     sendEvent("tts-cancel", utteranceId);
                 }
 
@@ -211,20 +224,6 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void speak(String utterance, ReadableMap params, Promise promise) {
         if(notReady(promise)) return;
-
-        if(ducking) {
-            // Request audio focus for playback
-            int amResult = audioManager.requestAudioFocus(afChangeListener,
-                                                          // Use the music stream.
-                                                          AudioManager.STREAM_MUSIC,
-                                                          // Request permanent focus.
-                                                          AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
-
-            if(amResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                promise.reject("Android AudioManager error, failed to request audio focus");
-                return;
-            }
-        }
 
         String utteranceId = Integer.toString(utterance.hashCode());
 
@@ -535,5 +534,59 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         getReactApplicationContext()
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, params);
+    }
+
+    private void requestFocus() {
+        if (ducking) {
+            // Request audio focus for playback
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                audioFocusRequest = new AudioFocusRequest
+                        .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                        .setAudioAttributes(audioAttributes)
+                        .setAcceptsDelayedFocusGain(false)
+                        .setOnAudioFocusChangeListener(audioFocusChangeListener)
+                        .build();
+
+                audioFocus = audioManager.requestAudioFocus(audioFocusRequest);
+            } else {
+                tts.setAudioAttributes(audioAttributes);
+                audioFocus = audioManager.requestAudioFocus(audioFocusChangeListener,
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+                );
+            }
+
+            if (audioFocus != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                tts.stop();
+            }
+        }
+    }
+
+    private void abandonFocus() {
+        if (ducking && audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            audioFocus = AudioManager.AUDIOFOCUS_REQUEST_FAILED;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                audioManager.abandonAudioFocusRequest(audioFocusRequest);
+                audioFocusRequest = null;
+            } else {
+                audioManager.abandonAudioFocus(audioFocusChangeListener);
+            }
+        }
+    }
+
+    private String audioFocusResultToString(int audioFocusResult) {
+        switch (audioFocusResult) {
+            case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
+                return "AUDIOFOCUS_REQUEST_FAILED";
+            case AudioManager.AUDIOFOCUS_REQUEST_GRANTED:
+                return "AUDIOFOCUS_REQUEST_GRANTED";
+            case AudioManager.AUDIOFOCUS_REQUEST_DELAYED:
+                return "AUDIOFOCUS_REQUEST_DELAYED";
+        }
+        return "Unknown audio focus result: " + audioFocusResult;
     }
 }
