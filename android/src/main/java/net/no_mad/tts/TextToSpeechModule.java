@@ -50,6 +50,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private AudioFocusRequest audioFocusRequest;
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
 
+    private int audioStreamType;
+
     private Map<String, Locale> localeCountryMap;
     private Map<String, Locale> localeLanguageMap;
 
@@ -115,8 +117,21 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                         bufferSizeInBytes = 4096;
                     }
 
+                    // AmiGO only uses MEDIA and RING so we do not need to convert all AudioManager.STREAM_NNN to AudioAttributes.USAGE_NNN
+                    int audioTrackUsage = AudioAttributes.USAGE_MEDIA;
+                    if (audioStreamType == AudioManager.STREAM_RING) {
+                        // force output to play over the phone speaker as per user setting
+                        audioTrackUsage = AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
+                        // } else if (androidAuto) {
+                        //     TODO: For DDAPP-9535 bring state of Android Auto connection to this library so
+                        //     that when not forcing playback over phone speaker the android auto navigation
+                        //     guidance usage can be set which is needed for the separate volume control
+
+                        //     audioTrackUsage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
+                    }
+
                     AudioAttributes audioTrackAudioAttributes = new AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setUsage(audioTrackUsage)
                             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                             .build();
 
@@ -576,7 +591,6 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         float volume = inputParams.hasKey("KEY_PARAM_VOLUME") ? (float) inputParams.getDouble("KEY_PARAM_VOLUME") : 1.0f;
         float pan = inputParams.hasKey("KEY_PARAM_PAN") ? (float) inputParams.getDouble("KEY_PARAM_PAN") : 0.0f;
 
-        int audioStreamType;
         switch (audioStreamTypeString) {
             /*
             // This has been added in API level 26, commenting out for now
