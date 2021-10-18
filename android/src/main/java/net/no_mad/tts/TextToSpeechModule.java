@@ -476,6 +476,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                     }
                 }
             }, engineName);
+            currentEngineName = tts.getDefaultEngine();
 
             setInitialAudioGain();
             setUtteranceProgress();
