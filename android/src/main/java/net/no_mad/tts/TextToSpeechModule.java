@@ -50,7 +50,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private AudioFocusRequest audioFocusRequest;
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
 
-    private int audioStreamType;
+    private boolean forcePhoneSpeaker;
+    private boolean isCarAudioSystem;
 
     private Map<String, Locale> localeCountryMap;
     private Map<String, Locale> localeLanguageMap;
@@ -117,17 +118,12 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                         bufferSizeInBytes = 4096;
                     }
 
-                    // AmiGO only uses MEDIA and RING so we do not need to convert all AudioManager.STREAM_NNN to AudioAttributes.USAGE_NNN
                     int audioTrackUsage = AudioAttributes.USAGE_MEDIA;
-                    if (audioStreamType == AudioManager.STREAM_RING) {
+                    if (forcePhoneSpeaker) {
                         // force output to play over the phone speaker as per user setting
                         audioTrackUsage = AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
-                        // } else if (androidAuto) {
-                        //     TODO: For DDAPP-9535 bring state of Android Auto connection to this library so
-                        //     that when not forcing playback over phone speaker the android auto navigation
-                        //     guidance usage can be set which is needed for the separate volume control
-
-                        //     audioTrackUsage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
+                    } else if (isCarAudioSystem) {
+                        audioTrackUsage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
                     }
 
                     AudioAttributes audioTrackAudioAttributes = new AudioAttributes.Builder()
@@ -586,43 +582,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     @SuppressWarnings("deprecation")
-    private int speak(String utterance, String utteranceId, ReadableMap inputParams) {
-        String audioStreamTypeString = inputParams.hasKey("KEY_PARAM_STREAM") ? inputParams.getString("KEY_PARAM_STREAM") : "";
-        float volume = inputParams.hasKey("KEY_PARAM_VOLUME") ? (float) inputParams.getDouble("KEY_PARAM_VOLUME") : 1.0f;
-        float pan = inputParams.hasKey("KEY_PARAM_PAN") ? (float) inputParams.getDouble("KEY_PARAM_PAN") : 0.0f;
-
-        switch (audioStreamTypeString) {
-            /*
-            // This has been added in API level 26, commenting out for now
-
-            case "STREAM_ACCESSIBILITY":
-                audioStreamType = AudioManager.STREAM_ACCESSIBILITY;
-                break;
-            */
-            case "STREAM_ALARM":
-                audioStreamType = AudioManager.STREAM_ALARM;
-                break;
-            case "STREAM_DTMF":
-                audioStreamType = AudioManager.STREAM_DTMF;
-                break;
-            case "STREAM_MUSIC":
-                audioStreamType = AudioManager.STREAM_MUSIC;
-                break;
-            case "STREAM_NOTIFICATION":
-                audioStreamType = AudioManager.STREAM_NOTIFICATION;
-                break;
-            case "STREAM_RING":
-                audioStreamType = AudioManager.STREAM_RING;
-                break;
-            case "STREAM_SYSTEM":
-                audioStreamType = AudioManager.STREAM_SYSTEM;
-                break;
-            case "STREAM_VOICE_CALL":
-                audioStreamType = AudioManager.STREAM_VOICE_CALL;
-                break;
-            default:
-                audioStreamType = AudioManager.USE_DEFAULT_STREAM_TYPE;
-        }
+    private int speak(String utterance, String utteranceId, ReadableMap options) {
+        forcePhoneSpeaker = options.hasKey("KEY_OPTION_FORCE_PHONE_SPEAKER") ? options.getBoolean("KEY_OPTION_FORCE_PHONE_SPEAKER") : false;
+        isCarAudioSystem = options.hasKey("KEY_OPTION_CAR_AUDIO_SYSTEM") ? options.getBoolean("KEY_OPTION_CAR_AUDIO_SYSTEM") : false;
+        float volume = options.hasKey("KEY_OPTION_VOLUME") ? (float)options.getDouble("KEY_OPTION_VOLUME") : 1.0f;
+        float pan = options.hasKey("KEY_OPTION_PAN") ? (float)options.getDouble("KEY_OPTION_PAN") : 0.0f;
 
         requestFocus();
 
@@ -631,7 +595,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 // synthesizeToFile requires a valid File, the audio written will not be used (audio is taken from onAudioAvailable)
                 File devNull = new File("/dev/null");
                 Bundle params = new Bundle();
-                params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, audioStreamType);
+                params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, forcePhoneSpeaker ? AudioManager.STREAM_RING : AudioManager.STREAM_MUSIC);
                 params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume);
                 params.putFloat(TextToSpeech.Engine.KEY_PARAM_PAN, pan);
                 return tts.synthesizeToFile(utterance, params, devNull, utteranceId);
@@ -661,8 +625,15 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         // Note 1: navigation guidance volume level only has effect on Android Auto so far and can only be changed when audio is playing on it.
         // Note 2: audio focus request audio attributes usage will be AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE to get
         // proper audio focus change for Android Auto.
+        int ttsAudioTrackUsage = AudioAttributes.USAGE_MEDIA;
+        if (forcePhoneSpeaker) {
+            // force output to play over the phone speaker as per user setting
+            ttsAudioTrackUsage = AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
+        } else if (isCarAudioSystem) {
+            ttsAudioTrackUsage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
+        }
         AudioAttributes ttsAudioAttributes = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setUsage(ttsAudioTrackUsage)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                 .build();
         tts.setAudioAttributes(ttsAudioAttributes);
