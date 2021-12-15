@@ -529,6 +529,10 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if (notReady(promise)) return;
 
         int result = tts.stop();
+        if (result == TextToSpeech.SUCCESS) {
+            // Stop playing audio. tts keeps on producing audio for the rest of the utterance ...
+            stopAudioTrack();
+        }
         boolean resultValue = (result == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
         promise.resolve(resultValue);
     }
@@ -687,12 +691,16 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         lock.unlock();
     }
 
-    private void audioDone() {
+    private void stopAudioTrack() {
         if (audioTrack != null) {
             audioTrack.stop();
             audioTrack.release();
             audioTrack = null;
         }
+    }
+
+    private void audioDone() {
+        stopAudioTrack();
         abandonFocus();
         ttsCompleted();
     }
