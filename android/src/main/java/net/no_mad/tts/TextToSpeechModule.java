@@ -68,6 +68,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private long audioGain = (long) (1.6788 * UNITY_GAIN_Q8p24); // 4.5dB = 1.6788 (10 ^ (4.5/20))
     private long largestSample = 0;
     private AudioTrack audioTrack;
+    private final ReentrantLock lockAudioTrack = new ReentrantLock();
 
     private static final boolean enableTestCode = false;
     private int clippedSamplesCount = 0;
@@ -137,6 +138,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                             .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                             .build();
 
+                    lockAudioTrack.lock();
                     try {
                         audioTrack = new AudioTrack(audioTrackAudioAttributes, audioTrackAudioFormat, bufferSizeInBytes, AudioTrack.MODE_STREAM, AudioManager.AUDIO_SESSION_ID_GENERATE);
                         if (audioTrack == null || audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
@@ -150,6 +152,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                         }
                     } catch (IllegalArgumentException e) {
                         tts.stop();
+                    } finally {
+                        lockAudioTrack.unlock();
                     }
                 }
 
@@ -178,6 +182,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onAudioAvailable(String utteranceId, byte[] audio) {
+                    lockAudioTrack.lock();
                     if (audioTrack != null) {
                         processAudio(audio);
 
@@ -193,6 +198,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                     } else {
                         tts.stop();
                     }
+                    lockAudioTrack.unlock();
 
                     if (enableTestCode) {
                         writeAudioToFile(audio);
@@ -692,11 +698,13 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     private void stopAudioTrack() {
+        lockAudioTrack.lock();
         if (audioTrack != null) {
             audioTrack.stop();
             audioTrack.release();
             audioTrack = null;
         }
+        lockAudioTrack.unlock();
     }
 
     private void audioDone() {
