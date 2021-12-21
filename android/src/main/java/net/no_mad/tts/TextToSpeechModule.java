@@ -61,14 +61,15 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private final Executor executor = Executors.newSingleThreadExecutor();
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition condition = lock.newCondition();
-    private boolean isTtsCompleted = false;
+    private final Condition conditionStopped = lock.newCondition();
+    private boolean isTtsCompleted = true;
+    private boolean stopRequest = false;
 
     private static final long UNITY_GAIN_Q8p24 = (1 << 24);
     private static final long audioGainClipRegion = (long) (0.9441 * UNITY_GAIN_Q8p24); // -0.5dB = 0.9441 (10 ^ (-0.5/20))
     private long audioGain = (long) (1.6788 * UNITY_GAIN_Q8p24); // 4.5dB = 1.6788 (10 ^ (4.5/20))
     private long largestSample = 0;
     private AudioTrack audioTrack;
-    private final ReentrantLock lockAudioTrack = new ReentrantLock();
 
     private static final boolean enableTestCode = false;
     private int clippedSamplesCount = 0;
@@ -82,7 +83,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             public void onAudioFocusChange(int focusChange) {
                 if (focusChange < 0) {
                     // Loss of Focus, stop TTS which will abandon focus (TTS should not be restarted)
-                    tts.stop();
+                    stop();
                 }
             }
         };
@@ -114,6 +115,12 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override
                 public void onBeginSynthesis(String utteranceId, int sampleRateInHz, int audioFormat, int channelCount) {
+                    lock.lock();
+                    if (stopRequest) {
+                        lock.unlock();
+                        return;
+                    }
+                    lock.unlock();
                     int bufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRateInHz, audioFormat, AudioFormat.ENCODING_PCM_16BIT);
                     if (bufferSizeInBytes == AudioTrack.ERROR_BAD_VALUE || bufferSizeInBytes == AudioTrack.ERROR) {
                         bufferSizeInBytes = 4096;
@@ -138,7 +145,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                             .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                             .build();
 
-                    lockAudioTrack.lock();
+                    lock.lock();
                     try {
                         audioTrack = new AudioTrack(audioTrackAudioAttributes, audioTrackAudioFormat, bufferSizeInBytes, AudioTrack.MODE_STREAM, AudioManager.AUDIO_SESSION_ID_GENERATE);
                         if (audioTrack == null || audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
@@ -153,7 +160,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                     } catch (IllegalArgumentException e) {
                         tts.stop();
                     } finally {
-                        lockAudioTrack.unlock();
+                        lock.unlock();
                     }
                 }
 
@@ -164,25 +171,29 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onDone(String utteranceId) {
-                    audioDone();
+                    audioDone(false);
                     sendEvent("tts-finish", utteranceId);
                 }
 
                 @Override
                 public void onError(String utteranceId) {
-                    audioDone();
+                    audioDone(false);
                     sendEvent("tts-error", utteranceId);
                 }
 
                 @Override
                 public void onStop(String utteranceId, boolean interrupted) {
-                    audioDone();
+                    audioDone(false);
                     sendEvent("tts-cancel", utteranceId);
                 }
 
                 @Override
                 public void onAudioAvailable(String utteranceId, byte[] audio) {
-                    lockAudioTrack.lock();
+                    lock.lock();
+                    if (stopRequest) {
+                        lock.unlock();
+                        return;
+                    }
                     if (audioTrack != null) {
                         processAudio(audio);
 
@@ -198,7 +209,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                     } else {
                         tts.stop();
                     }
-                    lockAudioTrack.unlock();
+                    lock.unlock();
 
                     if (enableTestCode) {
                         writeAudioToFile(audio);
@@ -320,6 +331,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void getHash(String utterance, Promise promise) {
+        promise.resolve(Integer.toString(utterance.hashCode()));
+    }
+
+    @ReactMethod
     public void speak(String utterance, ReadableMap params, Promise promise) {
         if (notReady(promise)) return;
 
@@ -332,21 +348,27 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 testCodeReset();
             }
 
+            lock.lock();
             isTtsCompleted = false;
+            stopRequest = false;
             int speakResult = speak(utterance, utteranceId, params);
             if (speakResult == TextToSpeech.SUCCESS) {
                 while (!isTtsCompleted) {
-                    lock.lock();
                     try {
                         condition.await();
                     } catch (InterruptedException e) {
                     } finally {
-                        lock.unlock();
+                        if (isTtsCompleted && stopRequest) {
+                            stopRequest = false;
+                            conditionStopped.signal();
+                        }
                     }
                 }
+                lock.unlock();
                 updateAudioGain();
                 promise.resolve(utteranceId);
             } else {
+                lock.unlock();
                 resolvePromiseWithStatusCode(speakResult, promise);
             }
         });
@@ -478,6 +500,10 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         }
 
         if (isPackageInstalled(engineName)) {
+            // setDefaultEngine may be called while the engine is speaking,
+            // fully stop before changing the engine.
+            stop();
+
             ready = null;
             currentEngineName = engineName;
             onCatalystInstanceDestroy();
@@ -494,7 +520,6 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                     }
                 }
             }, engineName);
-            currentEngineName = tts.getDefaultEngine();
 
             setInitialAudioGain();
             setUtteranceProgress();
@@ -530,15 +555,34 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         promise.resolve(engineArray);
     }
 
+    private int stop() {
+        lock.lock();
+        int result = tts.stop();
+        if (result == TextToSpeech.SUCCESS) {
+            // Stop playing audio. The engine (most likely) keeps on producing
+            // audio for the rest of the utterance ... wait until it is done.
+            if (!isTtsCompleted && !stopRequest) {
+                // TTS is speaking / going to speak and no stop request queued yet.
+                // Stop active audio, then wait for engine is fully done.
+                stopRequest = true;
+                audioDone(stopRequest);
+                while (stopRequest) {
+                    try {
+                        conditionStopped.await();
+                    } catch (InterruptedException ignored) {
+                    }
+                }
+            }
+        }
+        lock.unlock();
+        return result;
+    }
+
     @ReactMethod
     public void stop(Promise promise) {
         if (notReady(promise)) return;
 
-        int result = tts.stop();
-        if (result == TextToSpeech.SUCCESS) {
-            // Stop playing audio. tts keeps on producing audio for the rest of the utterance ...
-            stopAudioTrack();
-        }
+        int result = stop();
         boolean resultValue = (result == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
         promise.resolve(resultValue);
     }
@@ -669,10 +713,12 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         }
 
         if (audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            // Delay so that the ducking of music will have had the initial effect.
-            try {
-                Thread.sleep(450);
-            } catch (Exception ignored) {}
+            if (audioManager.isMusicActive()) {
+                // Delay so that the ducking of music will have had the initial effect.
+                try {
+                    Thread.sleep(450);
+                } catch (Exception ignored) {}
+            }
         } else {
             tts.stop();
         }
@@ -690,27 +736,29 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         }
     }
 
-    private void ttsCompleted() {
-        isTtsCompleted = true;
-        lock.lock();
-        condition.signal();
-        lock.unlock();
+    private void ttsCompleted(boolean interrupting) {
+        if (!isTtsCompleted ) {
+          if (!interrupting) {
+              isTtsCompleted = true;
+              condition.signal();
+          }
+        }
     }
 
     private void stopAudioTrack() {
-        lockAudioTrack.lock();
         if (audioTrack != null) {
             audioTrack.stop();
             audioTrack.release();
             audioTrack = null;
         }
-        lockAudioTrack.unlock();
     }
 
-    private void audioDone() {
+    private void audioDone(boolean interrupting) {
+        lock.lock();
         stopAudioTrack();
         abandonFocus();
-        ttsCompleted();
+        ttsCompleted(interrupting);
+        lock.unlock();
     }
 
     private String audioFocusResultToString(int audioFocusResult) {
@@ -724,6 +772,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         }
         return "Unknown audio focus result: " + audioFocusResult;
     }
+
 
 
     private void processAudio(byte[] audio) {
