@@ -41,7 +41,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private static final String TAG = "TextToSpeechModule";
 
     private TextToSpeech tts;
-    private Boolean ready = null;
+    private boolean ready = false;
     private ArrayList<Promise> initStatusPromises;
 
     private boolean ducking = false;
@@ -99,7 +99,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             @Override
             public void onInit(int status) {
                 synchronized (initStatusPromises) {
-                    ready = (status == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
+                    ready = (status == TextToSpeech.SUCCESS);
                     for (Promise p : initStatusPromises) {
                         resolveReadyPromise(p);
                     }
@@ -256,10 +256,10 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     private void resolveReadyPromise(Promise promise) {
-        if (ready == Boolean.TRUE) {
+        if (ready) {
             promise.resolve("success");
         } else {
-            promise.reject("no_engine", "No TTS engine installed");
+            promise.reject("not_ready", "TTS is not ready");
         }
     }
 
@@ -325,7 +325,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void getInitStatus(Promise promise) {
         synchronized (initStatusPromises) {
-            if (ready == null) {
+            if (!ready) {
                 initStatusPromises.add(promise);
             } else {
                 resolveReadyPromise(promise);
@@ -340,7 +340,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void speak(String utterance, ReadableMap params, Promise promise) {
-        if (notReady(promise)) return;
+        if (!isTtsReady(promise)) return;
 
         String utteranceId = Integer.toString(utterance.hashCode());
         lock.lock();
@@ -395,7 +395,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void setDefaultLanguage(String language, Promise promise) {
-        if (notReady(promise)) return;
+        if (!isTtsReady(promise)) return;
 
         Locale locale = null;
 
@@ -416,14 +416,14 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void setDucking(Boolean ducking, Promise promise) {
-        if (notReady(promise)) return;
+        if (!isTtsReady(promise)) return;
         this.ducking = ducking;
         promise.resolve("success");
     }
 
     @ReactMethod
     public void setDefaultRate(Float rate, Boolean skipTransform, Promise promise) {
-        if (notReady(promise)) return;
+        if (!isTtsReady(promise)) return;
 
         if (skipTransform) {
             int result = tts.setSpeechRate(rate);
@@ -443,14 +443,14 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void setDefaultPitch(Float pitch, Promise promise) {
-        if (notReady(promise)) return;
+        if (!isTtsReady(promise)) return;
         int result = tts.setPitch(pitch);
         resolvePromiseWithStatusCode(result, promise);
     }
 
     @ReactMethod
     public void setDefaultVoice(String voiceId, Promise promise) {
-        if (notReady(promise)) return;
+        if (!isTtsReady(promise)) return;
 
         if (Build.VERSION.SDK_INT >= 21) {
             try {
@@ -474,7 +474,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void voices(Promise promise) {
-        if (notReady(promise)) return;
+        if (!isTtsReady(promise)) return;
 
         WritableArray voiceArray = Arguments.createArray();
 
@@ -509,7 +509,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void setDefaultEngine(String engineName, final Promise promise) {
-        if (notReady(promise)) return;
+        if (!isTtsReady(promise)) return;
 
         if (engineName == null || engineName.equals(currentEngineName)) {
             // The engine we're going to activate is already active (or
@@ -523,14 +523,14 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             // fully stop before changing the engine.
             stop();
 
-            ready = null;
+            ready = false;
             currentEngineName = engineName;
             onCatalystInstanceDestroy();
             tts = new TextToSpeech(getReactApplicationContext(), new TextToSpeech.OnInitListener() {
                 @Override
                 public void onInit(int status) {
                     synchronized (initStatusPromises) {
-                        ready = (status == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
+                        ready = (status == TextToSpeech.SUCCESS);
                         for (Promise p : initStatusPromises) {
                             resolveReadyPromise(p);
                         }
@@ -549,7 +549,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void engines(Promise promise) {
-        if (notReady(promise)) return;
+        if (!isTtsReady(promise)) return;
 
         WritableArray engineArray = Arguments.createArray();
 
@@ -599,10 +599,10 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void stop(Promise promise) {
-        boolean resultValue = Boolean.TRUE;
-        if (ready != null || ready == Boolean.TRUE) {
+        boolean resultValue = true;
+        if (ready) {
             int result = stop();
-            resultValue = (result == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
+            resultValue = (result == TextToSpeech.SUCCESS);
         }
         promise.resolve(resultValue);
     }
@@ -644,15 +644,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         }
     }
 
-    private boolean notReady(Promise promise) {
-        if (ready == null) {
-            promise.reject("not_ready", "TTS is not ready");
-            return true;
-        } else if (ready != Boolean.TRUE) {
+    private boolean isTtsReady(Promise promise) {
+        if (!ready) {
             resolveReadyPromise(promise);
-            return true;
         }
-        return false;
+        return ready;
     }
 
     @SuppressWarnings("deprecation")
