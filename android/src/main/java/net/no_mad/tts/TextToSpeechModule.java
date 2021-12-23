@@ -62,12 +62,15 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition condition = lock.newCondition();
     private final Condition conditionStopped = lock.newCondition();
-    private boolean isTtsCompleted = true;
+    private boolean isTtsIdle = true;
     private boolean stopRequest = false;
+    private String playingUtteranceId = "";
 
     private static final long UNITY_GAIN_Q8p24 = (1 << 24);
     private static final long audioGainClipRegion = (long) (0.9441 * UNITY_GAIN_Q8p24); // -0.5dB = 0.9441 (10 ^ (-0.5/20))
     private long audioGain = (long) (1.6788 * UNITY_GAIN_Q8p24); // 4.5dB = 1.6788 (10 ^ (4.5/20))
+    private long audioGainMax = (long) (2.8184 * UNITY_GAIN_Q8p24); // 9dB = 2.8184 (10 ^ (9/20))
+    private long audioGainMin = (long) (1.0 * UNITY_GAIN_Q8p24); // 0dB = 1.0 (10 ^ (0/20))
     private long largestSample = 0;
     private AudioTrack audioTrack;
 
@@ -340,38 +343,54 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if (notReady(promise)) return;
 
         String utteranceId = Integer.toString(utterance.hashCode());
-        // queue TTS utterance using single thread executor so that audio focus can be requested early
-        // when requesting to speak an utterance instead of waiting for it to be realy started to avoid
-        // nested requests when an utterance is requested to be spoken while another is still playing
-        executor.execute(() -> {
-            if (enableTestCode) {
-                testCodeReset();
-            }
+        lock.lock();
+        // Do not queue when bashing play button in voice download screen
+        if (!isTtsIdle && utteranceId.equals(playingUtteranceId)) {
+            lock.unlock();
+            promise.reject("TTS is speaking");
+        } else {
+            lock.unlock();
+            // Not idle race condition until lock in executor.execute ...
+            // small chance of unwanted queued sentences
 
-            lock.lock();
-            isTtsCompleted = false;
-            stopRequest = false;
-            int speakResult = speak(utterance, utteranceId, params);
-            if (speakResult == TextToSpeech.SUCCESS) {
-                while (!isTtsCompleted) {
-                    try {
-                        condition.await();
-                    } catch (InterruptedException e) {
-                    } finally {
-                        if (isTtsCompleted && stopRequest) {
-                            stopRequest = false;
-                            conditionStopped.signal();
+            // queue TTS utterance using single thread executor so that audio focus can be requested early
+            // when requesting to speak an utterance instead of waiting for it to be realy started to avoid
+            // nested requests when an utterance is requested to be spoken while another is still playing
+            executor.execute(() -> {
+                if (enableTestCode) {
+                    testCodeReset();
+                }
+
+                lock.lock();
+                isTtsIdle = false;
+                stopRequest = false;
+                playingUtteranceId = utteranceId;
+                int speakResult = speak(utterance, playingUtteranceId, params);
+                if (speakResult == TextToSpeech.SUCCESS) {
+                    while (!isTtsIdle) {
+                        try {
+                            condition.await();
+                        } catch (InterruptedException e) {
+                        } finally {
+                            if (isTtsIdle) {
+                                if (stopRequest) {
+                                    stopRequest = false;
+                                    conditionStopped.signal();
+                                } else {
+                                    // update gain only after fully spoken utterance
+                                    updateAudioGain();
+                                }
+                            }
                         }
                     }
+                    lock.unlock();
+                    promise.resolve(playingUtteranceId);
+                } else {
+                    lock.unlock();
+                    resolvePromiseWithStatusCode(speakResult, promise);
                 }
-                lock.unlock();
-                updateAudioGain();
-                promise.resolve(utteranceId);
-            } else {
-                lock.unlock();
-                resolvePromiseWithStatusCode(speakResult, promise);
-            }
-        });
+            });
+        }
     }
 
     @ReactMethod
@@ -561,7 +580,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if (result == TextToSpeech.SUCCESS) {
             // Stop playing audio. The engine (most likely) keeps on producing
             // audio for the rest of the utterance ... wait until it is done.
-            if (!isTtsCompleted && !stopRequest) {
+            if (!isTtsIdle && !stopRequest) {
                 // TTS is speaking / going to speak and no stop request queued yet.
                 // Stop active audio, then wait for engine is fully done.
                 stopRequest = true;
@@ -580,10 +599,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void stop(Promise promise) {
-        if (notReady(promise)) return;
-
-        int result = stop();
-        boolean resultValue = (result == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
+        boolean resultValue = Boolean.TRUE;
+        if (ready != null || ready == Boolean.TRUE) {
+            int result = stop();
+            resultValue = (result == TextToSpeech.SUCCESS) ? Boolean.TRUE : Boolean.FALSE;
+        }
         promise.resolve(resultValue);
     }
 
@@ -724,7 +744,18 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         }
     }
 
-    private void abandonFocus() {
+    private void audioDone(boolean interrupting) {
+        // When interupting, called from stop(), the lock is already locked
+        if (!interrupting) {
+            lock.lock();
+        }
+
+        if (audioTrack != null) {
+            audioTrack.stop();
+            audioTrack.release();
+            audioTrack = null;
+        }
+
         if (audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             audioFocus = AudioManager.AUDIOFOCUS_REQUEST_FAILED;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -734,31 +765,15 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 audioManager.abandonAudioFocus(audioFocusChangeListener);
             }
         }
-    }
 
-    private void ttsCompleted(boolean interrupting) {
-        if (!isTtsCompleted ) {
-          if (!interrupting) {
-              isTtsCompleted = true;
-              condition.signal();
-          }
+        if (!isTtsIdle && !interrupting) {
+            isTtsIdle = true;
+            condition.signal();
         }
-    }
 
-    private void stopAudioTrack() {
-        if (audioTrack != null) {
-            audioTrack.stop();
-            audioTrack.release();
-            audioTrack = null;
+        if (!interrupting) {
+            lock.unlock();
         }
-    }
-
-    private void audioDone(boolean interrupting) {
-        lock.lock();
-        stopAudioTrack();
-        abandonFocus();
-        ttsCompleted(interrupting);
-        lock.unlock();
     }
 
     private String audioFocusResultToString(int audioFocusResult) {
@@ -844,6 +859,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if (largestSample != 0) {
             // Sample and gain values are in Q8.24 format
             audioGain = (UNITY_GAIN_Q8p24 * UNITY_GAIN_Q8p24) / ((largestSample * audioGainClipRegion) >> 24);
+            if (audioGain > audioGainMax) {
+                audioGain = audioGainMax;
+            } else if (audioGain < audioGainMin) {
+                audioGain = audioGainMin;
+            }
         }
         if (enableTestCode) {
             Log.d(TAG, "update gain " + (double)audioGain / (double)UNITY_GAIN_Q8p24 + " clipped: (" + sampleCount + " => " + clippedSamplesCount + " = " + (((float)clippedSamplesCount / (float)sampleCount) * 100.0f) + " %)");
