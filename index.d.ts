@@ -97,6 +97,7 @@ export class ReactNativeTts extends RN.NativeEventEmitter {
   setIgnoreSilentSwitch: (ignoreSilentSwitch: boolean) => Promise<boolean>;
   voices: () => Promise<Voice[]>;
   engines: () => Promise<Engine[]>;
+  getHash: (utterance: string) => string | number;
   /** Read the sentence and return an id for the task. */
   speak: (utterance: string, options?: Options) => string | number;
   stop: (onWordBoundary?: boolean) => Promise<boolean>;
