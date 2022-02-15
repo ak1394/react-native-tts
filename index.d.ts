@@ -106,7 +106,7 @@ export class ReactNativeTts extends RN.NativeEventEmitter {
   addEventListener: <T extends TtsEvents>(
     type: T,
     handler: TtsEventHandler<T>
-  ) => void;
+  ) => RN.EmitterSubscription;
   removeEventListener: <T extends TtsEvents>(
     type: T,
     handler: TtsEventHandler<T>
