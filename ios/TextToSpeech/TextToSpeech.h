@@ -17,4 +17,5 @@
 @property (nonatomic) float defaultRate;
 @property (nonatomic) float defaultPitch;
 @property (nonatomic) bool ducking;
+@property (nonatomic) bool useAudioSession;
 @end

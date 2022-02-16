@@ -33,6 +33,7 @@ RCT_EXPORT_MODULE()
         _synthesizer.delegate = self;
         _ducking = false;
         _ignoreSilentSwitch = @"inherit"; // inherit, ignore, obey
+        _useAudioSession = true;
     }
 
     return self;
@@ -78,17 +79,19 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
         utterance.pitchMultiplier = _defaultPitch;
     }
 
-    // ensure that the audio session is always configured correct for TTS usage before playback
-    // starts, another audio source with different setup may have been active just before this
-    if (_ducking) {
-      // Set both DuckOthers and InterruptSpokenAudioAndMixwithOthers for proper interaction with all types of audio that can be active
-      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
-                                       withOptions:AVAudioSessionCategoryOptionDuckOthers | AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
-                                             error:nil];
-    } else {
-      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
-                                       withOptions:AVAudioSessionCategoryOptionMixWithOthers
-                                             error:nil];
+    if (_useAudioSession) {
+        // ensure that the audio session is always configured correct for TTS usage before playback
+        // starts, another audio source with different setup may have been active just before this
+        if (_ducking) {
+          // Set both DuckOthers and InterruptSpokenAudioAndMixwithOthers for proper interaction with all types of audio that can be active
+          [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
+                                          withOptions:AVAudioSessionCategoryOptionDuckOthers | AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
+                                                error:nil];
+        } else {
+          [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
+                                          withOptions:AVAudioSessionCategoryOptionMixWithOthers
+                                                error:nil];
+        }
     }
 
     [self.synthesizer speakUtterance:utterance];
@@ -105,6 +108,14 @@ RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)re
         boundary = AVSpeechBoundaryImmediate;
     }
 
+    if (!_useAudioSession) {
+        // stopping without pausing will give an error on AVAudioSession setActive NO
+        // It will still make it inactive but since there is no specific error,
+        // it can't be catched and handled separately from other errors.
+        // Not calling it for the old useAudioSesson case as it doesn't check errors
+        // and would otherwise try to deactivate for both both didPause and didFinish
+        [self.synthesizer pauseSpeakingAtBoundary:boundary];
+    }
     BOOL stopped = [self.synthesizer stopSpeakingAtBoundary:boundary];
 
     resolve([NSNumber numberWithBool:stopped]);
@@ -146,6 +157,13 @@ RCT_EXPORT_METHOD(setDucking:(BOOL *)ducking
     resolve(@"success");
 }
 
+RCT_EXPORT_METHOD(setAudioManagement:(BOOL *)useAudioSession
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(__unused RCTPromiseRejectBlock)reject)
+{
+    _useAudioSession = useAudioSession;
+    resolve(@"success");
+}
 
 RCT_EXPORT_METHOD(setDefaultLanguage:(NSString *)language
                   resolve:(RCTPromiseResolveBlock)resolve
@@ -229,7 +247,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didStartSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    if(_ducking) {
+    if(_useAudioSession && _ducking) {
         [[AVAudioSession sharedInstance] setActive:YES error:nil];
     }
 
@@ -238,7 +256,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didFinishSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    if(_ducking) {
+    if(_useAudioSession && _ducking) {
         // set option NotifyOthersOnDeactivation to ensure all audio that can be restarted will restart
         [[AVAudioSession sharedInstance] setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
     }
@@ -248,7 +266,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didPauseSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    if(_ducking) {
+    if(_useAudioSession && _ducking) {
         // set option NotifyOthersOnDeactivation to ensure all audio that can be restarted will restart
         [[AVAudioSession sharedInstance] setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
     }
@@ -258,7 +276,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didContinueSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    if(_ducking) {
+    if(_useAudioSession && _ducking) {
         [[AVAudioSession sharedInstance] setActive:YES error:nil];
     }
 
@@ -275,7 +293,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didCancelSpeechUtterance:(AVSpeechUtterance *)utterance
 {
-    if(_ducking) {
+    if(_useAudioSession && _ducking) {
         // set option NotifyOthersOnDeactivation to ensure all audio that can be restarted will restart
         [[AVAudioSession sharedInstance] setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
     }

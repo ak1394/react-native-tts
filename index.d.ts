@@ -100,7 +100,7 @@ export class ReactNativeTts extends RN.NativeEventEmitter {
   getHash: (utterance: string) => string | number;
   /** Read the sentence and return an id for the task. */
   speak: (utterance: string, options?: Options) => string | number;
-  stop: (onWordBoundary?: boolean) => Promise<boolean>;
+  async stop: (onWordBoundary?: boolean) => Promise<boolean>;
   pause: (onWordBoundary?: boolean) => Promise<boolean>;
   resume: () => Promise<boolean>;
   addEventListener: <T extends TtsEvents>(

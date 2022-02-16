@@ -35,6 +35,13 @@ class Tts extends NativeEventEmitter {
     return TextToSpeech.setDucking(enabled);
   }
 
+  setAudioManagement(enabled) {
+    if (Platform.OS === 'windows') {
+      return Promise.resolve(true);
+    }
+    return TextToSpeech.setAudioManagement(enabled);
+  }
+
   setDefaultEngine(engineName) {
     if (Platform.OS === 'ios' || Platform.OS === 'windows') {
       return Promise.resolve(true);
@@ -100,7 +107,7 @@ class Tts extends NativeEventEmitter {
     }
   }
 
-  stop(onWordBoundary) {
+  async stop(onWordBoundary)  {
     if (Platform.OS === 'ios') {
       return TextToSpeech.stop(onWordBoundary);
     } else {
