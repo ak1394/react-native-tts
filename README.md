@@ -55,7 +55,8 @@ Additionally, speak() allows to pass platform-specific options.
 // IOS
 Tts.speak('Hello, world!', {
   iosVoiceId: 'com.apple.ttsbundle.Moira-compact',
-  rate: 0.5,
+  rate: 0.5, 
+   volume: 1.0
 });
 // Android
 Tts.speak('Hello, world!', {
@@ -79,6 +80,7 @@ The supported options for IOS are:
 
 - `iosVoiceId` which voice to use, check [voices()](#list-voices) for available values
 - `rate` which speech rate this line should be spoken with. Will override [default rate](#set-default-speech-rate) if set for this utterance.
+- `volume` sets the volume for the speech.
 
 Stop speaking and flush the TTS queue.
 
@@ -150,6 +152,16 @@ Sets default voice, pass one of the voiceId as reported by a call to Tts.voices(
 ```js
 Tts.setDefaultVoice('com.apple.ttsbundle.Moira-compact');
 ```
+
+### Set default Volume 
+
+*(only for iOS)*
+
+Sets default volume for the speech. This should be between 0.0 and 1.0
+
+```js
+Tts.setDefaultVolume(0.8);
+``` 
 
 ### Set default Speech Rate
 
