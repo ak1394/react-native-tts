@@ -8,6 +8,7 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.content.Intent;
 import android.content.ActivityNotFoundException;
 import android.net.Uri;
@@ -49,6 +50,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private AudioManager audioManager;
     private AudioFocusRequest audioFocusRequest;
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
+    private boolean useAudioFocus = true;
 
     private boolean forcePhoneSpeaker;
     private boolean isCarAudioSystem;
@@ -84,7 +86,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
             public void onAudioFocusChange(int focusChange) {
-                if (focusChange < 0) {
+                if (useAudioFocus && focusChange < 0) {
                     // Loss of Focus, stop TTS which will abandon focus (TTS should not be restarted)
                     stop();
                 }
@@ -422,6 +424,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void setAudioManagement(boolean useAudioFocus) {
+        this.useAudioFocus = useAudioFocus;
+    }
+
+    @ReactMethod
     public void setDefaultRate(Float rate, Boolean skipTransform, Promise promise) {
         if (!isTtsReady(promise)) return;
 
@@ -708,35 +715,35 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 .build();
         tts.setAudioAttributes(ttsAudioAttributes);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            AudioAttributes audioFocusAudioAttributes = new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .build();
-            audioFocusRequest = new AudioFocusRequest
-                    .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                    .setAudioAttributes(audioFocusAudioAttributes)
-                    .setAcceptsDelayedFocusGain(false)
-                    .setOnAudioFocusChangeListener(audioFocusChangeListener)
-                    .build();
+        if (useAudioFocus) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                AudioAttributes audioFocusAudioAttributes = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build();
+                audioFocusRequest = new AudioFocusRequest
+                        .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                        .setAudioAttributes(audioFocusAudioAttributes)
+                        .setAcceptsDelayedFocusGain(false)
+                        .setOnAudioFocusChangeListener(audioFocusChangeListener)
+                        .build();
 
-            audioFocus = audioManager.requestAudioFocus(audioFocusRequest);
-        } else {
-            audioFocus = audioManager.requestAudioFocus(audioFocusChangeListener,
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
-            );
-        }
-
-        if (audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            if (audioManager.isMusicActive()) {
-                // Delay so that the ducking of music will have had the initial effect.
-                try {
-                    Thread.sleep(450);
-                } catch (Exception ignored) {}
+                audioFocus = audioManager.requestAudioFocus(audioFocusRequest);
+            } else {
+                audioFocus = audioManager.requestAudioFocus(audioFocusChangeListener,
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+                );
             }
-        } else {
-            tts.stop();
+
+            if (audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                if (audioManager.isMusicActive()) {
+                    // Delay so that the ducking of music will have had the initial effect.
+                    SystemClock.sleep(450);
+                }
+            } else {
+                tts.stop();
+            }
         }
     }
 
@@ -752,7 +759,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             audioTrack = null;
         }
 
-        if (audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+        if (useAudioFocus && audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             audioFocus = AudioManager.AUDIOFOCUS_REQUEST_FAILED;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 audioManager.abandonAudioFocusRequest(audioFocusRequest);
