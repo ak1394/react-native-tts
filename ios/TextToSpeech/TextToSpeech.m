@@ -82,15 +82,26 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     if (_useAudioSession) {
         // ensure that the audio session is always configured correct for TTS usage before playback
         // starts, another audio source with different setup may have been active just before this
+        AVAudioSession * audioSession = [AVAudioSession sharedInstance];
         if (_ducking) {
           // Set both DuckOthers and InterruptSpokenAudioAndMixwithOthers for proper interaction with all types of audio that can be active
-          [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
-                                          withOptions:AVAudioSessionCategoryOptionDuckOthers | AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
-                                                error:nil];
+          [audioSession setCategory:AVAudioSessionCategoryPlayback
+                        withOptions:AVAudioSessionCategoryOptionDuckOthers | AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
+                              error:nil];
         } else {
-          [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
-                                          withOptions:AVAudioSessionCategoryOptionMixWithOthers
-                                                error:nil];
+          [audioSession setCategory:AVAudioSessionCategoryPlayback
+                        withOptions:AVAudioSessionCategoryOptionMixWithOthers
+                              error:nil];
+        }
+        if (@available(iOS 12.0, *)) {
+            BOOL carPlay = [[params valueForKey:@"KEY_OPTION_CAR_AUDIO_SYSTEM"] boolValue];
+            if (carPlay) {
+                [audioSession setMode:AVAudioSessionModeVoicePrompt error:nil];
+            } else {
+                if (audioSession.mode == AVAudioSessionModeVoicePrompt) {
+                    [audioSession setMode:AVAudioSessionModeDefault error:nil];
+                }
+            }
         }
     }
 
