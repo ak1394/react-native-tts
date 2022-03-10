@@ -67,6 +67,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private boolean isTtsIdle = true;
     private boolean stopRequest = false;
     private String playingUtteranceId = "";
+    private String playingUtterance = "";
 
     private static final long UNITY_GAIN_Q8p24 = (1 << 24);
     private static final long audioGainClipRegion = (long) (0.9441 * UNITY_GAIN_Q8p24); // -0.5dB = 0.9441 (10 ^ (-0.5/20))
@@ -349,7 +350,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         // Do not queue when bashing play button in voice download screen
         if (!isTtsIdle && utteranceId.equals(playingUtteranceId)) {
             lock.unlock();
-            promise.reject("TTS is speaking");
+            promise.reject("TTS is speaking: " + playingUtterance + ", requested: " + utterance);
         } else {
             lock.unlock();
             // Not idle race condition until lock in executor.execute ...
@@ -366,9 +367,10 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 lock.lock();
                 isTtsIdle = false;
                 stopRequest = false;
-                playingUtteranceId = utteranceId;
-                int speakResult = speak(utterance, playingUtteranceId, params);
+                int speakResult = speak(utterance, utteranceId, params);
                 if (speakResult == TextToSpeech.SUCCESS) {
+                    playingUtteranceId = utteranceId;
+                    playingUtterance = utterance;
                     while (!isTtsIdle) {
                         try {
                             condition.await();
@@ -385,8 +387,10 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                             }
                         }
                     }
+                    playingUtteranceId = "";
+                    playingUtterance = "";
                     lock.unlock();
-                    promise.resolve(playingUtteranceId);
+                    promise.resolve(utteranceId);
                 } else {
                     lock.unlock();
                     resolvePromiseWithStatusCode(speakResult, promise);
