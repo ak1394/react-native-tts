@@ -184,7 +184,15 @@ RCT_EXPORT_METHOD(setDefaultLanguage:(NSString *)language
 
     if(voice) {
         _defaultVoice = voice;
-        resolve(@"success");
+        // The voice identifier contains the string com.apple.ttsbundle when the voice is a Nuance
+        // voice and com.apple.speech.synthesis.voice when it is an Apple voice based on speech synthesis
+        // technology from voices before the Nuance voices (Siri voices are not returned using these APIs)
+        // Based on the resolve result the caller can decide whether to include Nuance phonemes if available
+        if ([voice.identifier containsString:@"com.apple.ttsbundle"]) {
+            resolve(@YES);
+        } else {
+            resolve(@NO);
+        }
     } else {
         reject(@"not_found", @"Language not found", nil);
     }
