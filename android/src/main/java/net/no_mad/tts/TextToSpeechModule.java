@@ -34,6 +34,16 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private Map<String, Locale> localeCountryMap;
     private Map<String, Locale> localeLanguageMap;
 
+    @ReactMethod
+    public void addListener(String eventName) {
+
+    }
+
+    @ReactMethod
+    public void removeListeners(Integer count) {
+
+    }
+
     public TextToSpeechModule(ReactApplicationContext reactContext) {
         super(reactContext);
         audioManager = (AudioManager) reactContext.getApplicationContext().getSystemService(reactContext.AUDIO_SERVICE);
