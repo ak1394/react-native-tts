@@ -99,13 +99,9 @@ class Tts extends NativeEventEmitter {
         return TextToSpeech.speak(utterance, {});
       }
     } else {
-      if (Platform.OS === 'ios' || Platform.OS === 'windows') {
         return TextToSpeech.speak(utterance, options);
-      } else {
-        return TextToSpeech.speak(utterance, options.androidParams || {});
       }
     }
-  }
 
   async stop(onWordBoundary)  {
     if (Platform.OS === 'ios') {
