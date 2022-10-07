@@ -56,22 +56,11 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
 
     AVSpeechUtterance *utterance = [[AVSpeechUtterance alloc] initWithString:text];
 
-    NSString* voice = [params valueForKey:@"iosVoiceId"];
-    if (voice) {
-        utterance.voice = [AVSpeechSynthesisVoice voiceWithIdentifier:voice];
-    } else if (_defaultVoice) {
+    if (_defaultVoice) {
         utterance.voice = _defaultVoice;
     }
 
-    float rate = [[params valueForKey:@"rate"] floatValue];
-    if (rate) {
-        if(rate > AVSpeechUtteranceMinimumSpeechRate && rate < AVSpeechUtteranceMaximumSpeechRate) {
-            utterance.rate = rate;
-        } else {
-            reject(@"bad_rate", @"Wrong rate value", nil);
-            return;
-        }
-    } else if (_defaultRate) {
+     if (_defaultRate) {
         utterance.rate = _defaultRate;
     }
 
