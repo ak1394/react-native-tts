@@ -90,21 +90,8 @@ class Tts extends NativeEventEmitter {
     return TextToSpeech.getHash(utterance);
   }
 
-  speak(utterance, options = {}) {
-    // compatibility with old-style voiceId argument passing
-    if (typeof options === 'string') {
-      if (Platform.OS === 'ios') {
-        return TextToSpeech.speak(utterance, { iosVoiceId: options });
-      } else {
-        return TextToSpeech.speak(utterance, {});
-      }
-    } else {
-      if (Platform.OS === 'ios' || Platform.OS === 'windows') {
+  speak(utterance, options) {
         return TextToSpeech.speak(utterance, options);
-      } else {
-        return TextToSpeech.speak(utterance, options.androidParams || {});
-      }
-    }
   }
 
   async stop(onWordBoundary)  {
