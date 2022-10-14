@@ -710,7 +710,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if (isCarAudioSystem) {
             ttsAudioTrackUsage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
         }
-        
+
         AudioAttributes ttsAudioAttributes = new AudioAttributes.Builder()
                 .setUsage(ttsAudioTrackUsage)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
@@ -892,19 +892,16 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         }
     }
 
-    private AudioTrack forceSpeakerRoute(AudioTrack audioTrack){
+    private void forceSpeakerRoute(AudioTrack audioTrack)
+    {
+        AudioManager audioManager = (AudioManager) context.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
         AudioDeviceInfo[] audioDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
-        AudioDeviceInfo loudSpeakerAudioDevice = audioTrack.getRoutedDevice();
 
-        for (AudioDeviceInfo audioDevice : audioDevices)
-        {
-            if (audioDevice.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER)
-            {
-                loudSpeakerAudioDevice = audioDevice;
+        for (AudioDeviceInfo audioDevice : audioDevices) {
+            if (audioDevice.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
+                audioTrack.setPreferredDevice(audioDevice);
+                break;
             }
         }
-
-        audioTrack.setPreferredDevice(loudSpeakerAudioDevice);
-        return audioTrack;
     }
 }
