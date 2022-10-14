@@ -156,7 +156,9 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                             tts.stop();
                         } else {
                             try {
-                                
+                                if (forcePhoneSpeaker) {
+                                    forceSpeakerRoute(audioTrack);
+                                }
                                 audioTrack.play();
                             } catch (IllegalStateException e) {
                                 tts.stop();
