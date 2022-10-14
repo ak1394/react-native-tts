@@ -133,10 +133,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                     }
 
                     int audioTrackUsage = AudioAttributes.USAGE_MEDIA;
-                    if (forcePhoneSpeaker) {
-                        // force output to play over the phone speaker as per user setting
-                        audioTrackUsage = AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
-                    } else if (isCarAudioSystem) {
+
+                    if (isCarAudioSystem) {
                         audioTrackUsage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
                     }
 
@@ -158,9 +156,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                             tts.stop();
                         } else {
                             try {
-                                if(forcePhoneSpeaker) {
-                                    forceSpeakerRoute(audioTrack);
-                                }
+                                
                                 audioTrack.play();
                             } catch (IllegalStateException e) {
                                 tts.stop();
@@ -710,12 +706,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         // Note 2: audio focus request audio attributes usage will be AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE to get
         // proper audio focus change for Android Auto.
         int ttsAudioTrackUsage = AudioAttributes.USAGE_MEDIA;
-        if (forcePhoneSpeaker) {
-            // force output to play over the phone speaker as per user setting
-            ttsAudioTrackUsage = AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
-        } else if (isCarAudioSystem) {
+        
+        if (isCarAudioSystem) {
             ttsAudioTrackUsage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
         }
+        
         AudioAttributes ttsAudioAttributes = new AudioAttributes.Builder()
                 .setUsage(ttsAudioTrackUsage)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
