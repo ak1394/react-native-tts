@@ -133,10 +133,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                     }
 
                     int audioTrackUsage = AudioAttributes.USAGE_MEDIA;
-                    if (forcePhoneSpeaker) {
-                        // force output to play over the phone speaker as per user setting
-                        audioTrackUsage = AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
-                    } else if (isCarAudioSystem) {
+
+                    if (isCarAudioSystem) {
                         audioTrackUsage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
                     }
 
@@ -158,6 +156,9 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                             tts.stop();
                         } else {
                             try {
+                                if (forcePhoneSpeaker) {
+                                    forceSpeakerRoute(audioTrack);
+                                }
                                 audioTrack.play();
                             } catch (IllegalStateException e) {
                                 tts.stop();
@@ -676,7 +677,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 // synthesizeToFile requires a valid File, the audio written will not be used (audio is taken from onAudioAvailable)
                 File devNull = new File("/dev/null");
                 Bundle params = new Bundle();
-                params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, forcePhoneSpeaker ? AudioManager.STREAM_RING : AudioManager.STREAM_MUSIC);
+                params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC);
                 params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume);
                 params.putFloat(TextToSpeech.Engine.KEY_PARAM_PAN, pan);
                 return tts.synthesizeToFile(utterance, params, devNull, utteranceId);
@@ -707,12 +708,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         // Note 2: audio focus request audio attributes usage will be AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE to get
         // proper audio focus change for Android Auto.
         int ttsAudioTrackUsage = AudioAttributes.USAGE_MEDIA;
-        if (forcePhoneSpeaker) {
-            // force output to play over the phone speaker as per user setting
-            ttsAudioTrackUsage = AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
-        } else if (isCarAudioSystem) {
+        
+        if (isCarAudioSystem) {
             ttsAudioTrackUsage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
         }
+
         AudioAttributes ttsAudioAttributes = new AudioAttributes.Builder()
                 .setUsage(ttsAudioTrackUsage)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
@@ -891,6 +891,19 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             Files.write(Paths.get(dirPath, "platformTTS.raw"), audio, StandardOpenOption.APPEND);
         } catch (IOException e) {
             Log.e(TAG, "Failed to write audio to file e:" + e);
+        }
+    }
+
+    private void forceSpeakerRoute(AudioTrack audioTrack)
+    {
+        AudioManager audioManager = (AudioManager) context.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+        AudioDeviceInfo[] audioDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+
+        for (AudioDeviceInfo audioDevice : audioDevices) {
+            if (audioDevice.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
+                audioTrack.setPreferredDevice(audioDevice);
+                break;
+            }
         }
     }
 }
