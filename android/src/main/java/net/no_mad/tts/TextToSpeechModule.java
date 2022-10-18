@@ -86,7 +86,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     public TextToSpeechModule(ReactApplicationContext reactContext) {
         super(reactContext);
-        this.context = reactContext;
+        context = reactContext;
         audioManager = (AudioManager) reactContext.getApplicationContext().getSystemService(reactContext.AUDIO_SERVICE);
         audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
@@ -900,7 +900,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     private void forceSpeakerRoute(AudioTrack audioTrack)
     {
-        AudioManager audioManager = (AudioManager) this.context.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+        AudioManager audioManager = (AudioManager) context.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
         AudioDeviceInfo[] audioDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
 
         for (AudioDeviceInfo audioDevice : audioDevices) {
