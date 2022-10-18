@@ -1,7 +1,9 @@
 package net.no_mad.tts;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.media.AudioAttributes;
+import android.media.AudioDeviceInfo;
 import android.media.AudioFocusRequest;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -80,9 +82,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     private static final boolean enableTestCode = false;
     private int clippedSamplesCount = 0;
     private int sampleCount = 0;
+    private ReactApplicationContext context;
 
     public TextToSpeechModule(ReactApplicationContext reactContext) {
         super(reactContext);
+        context = reactContext;
         audioManager = (AudioManager) reactContext.getApplicationContext().getSystemService(reactContext.AUDIO_SERVICE);
         audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
