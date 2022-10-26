@@ -138,6 +138,12 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
                     int audioTrackUsage = AudioAttributes.USAGE_MEDIA;
 
+                    // Support new implementation of forcing audio through speaker only for android 9 and higher
+                    if(forcePhoneSpeaker && Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
+                        // force output to play over the phone speaker as per user setting
+                        audioTrackUsage = AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
+                    }
+
                     if (isCarAudioSystem) {
                         audioTrackUsage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
                     }
@@ -160,7 +166,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                             tts.stop();
                         } else {
                             try {
-                                if (forcePhoneSpeaker) {
+                                if (forcePhoneSpeaker && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                                     forceSpeakerRoute(audioTrack);
                                 }
                                 audioTrack.play();
@@ -681,7 +687,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 // synthesizeToFile requires a valid File, the audio written will not be used (audio is taken from onAudioAvailable)
                 File devNull = new File("/dev/null");
                 Bundle params = new Bundle();
-                params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC);
+
+                // Support new implementation of forcing audio through speaker only for android 9 and higher
+                params.putInt(
+                        TextToSpeech.Engine.KEY_PARAM_STREAM,
+                        forcePhoneSpeaker && Build.VERSION.SDK_INT < Build.VERSION_CODES.P ? AudioManager.STREAM_RING : AudioManager.STREAM_MUSIC);
                 params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume);
                 params.putFloat(TextToSpeech.Engine.KEY_PARAM_PAN, pan);
                 return tts.synthesizeToFile(utterance, params, devNull, utteranceId);
@@ -712,7 +722,13 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         // Note 2: audio focus request audio attributes usage will be AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE to get
         // proper audio focus change for Android Auto.
         int ttsAudioTrackUsage = AudioAttributes.USAGE_MEDIA;
-        
+
+        // Support new implementation of forcing audio through speaker only for android 9 and higher
+        if(forcePhoneSpeaker && Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
+            // force output to play over the phone speaker as per user setting
+            ttsAudioTrackUsage = AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
+        }
+
         if (isCarAudioSystem) {
             ttsAudioTrackUsage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
         }
