@@ -414,6 +414,13 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
         try {
             int result = tts.setLanguage(locale);
+            // Google voices support SSML IPA phonetics, so far tested with Android 11, 12.
+            // Further testing with android 10 and lower required to set IPA for more versions.
+            String alphabet = "none";
+            if (currentEngineName.contains("com.google.android.tts") && Build.VERSION.SDK_INT >= 30) {
+                alphabet = "ipa";
+            }
+            sendPhoneticAlphabetEvent(alphabet);
             resolvePromiseWithStatusCode(result, promise);
         } catch (Exception e) {
             promise.reject("error", "Unknown error code");
@@ -688,6 +695,13 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         }
     }
 
+    private void sendPhoneticAlphabetEvent(String alphabet) {
+        WritableMap params = Arguments.createMap();
+        params.putString("type", "EVENT_PHONETIC_ALPHABET");
+        params.putString("data", alphabet);
+        sendEvent("PLATFORM_TTS_EVENT", params);
+    }
+
     private void sendEvent(String eventName, String utteranceId) {
         WritableMap params = Arguments.createMap();
         params.putString("utteranceId", utteranceId);
@@ -794,8 +808,6 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         }
         return "Unknown audio focus result: " + audioFocusResult;
     }
-
-
 
     private void processAudio(byte[] audio) {
         // convert to array of 64 bit samples in Q8.24 format
