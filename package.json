@@ -26,5 +26,9 @@
   "devDependencies": {
     "react": "18.2.0",
     "react-native": "0.71.1"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
   }
 }
