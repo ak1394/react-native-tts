@@ -93,6 +93,10 @@ class Tts extends NativeEventEmitter {
     }
   }
 
+  write(utterance, options = {}) {
+    return TextToSpeech.write(utterance, options);
+  }
+
   stop(onWordBoundary) {
     if (Platform.OS === 'ios') {
       return TextToSpeech.stop(onWordBoundary);

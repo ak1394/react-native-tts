@@ -16,6 +16,8 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import com.facebook.react.bridge.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -230,6 +232,38 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             promise.resolve(utteranceId);
         } else {
             resolvePromiseWithStatusCode(speakResult, promise);
+        }
+    }
+
+    @ReactMethod
+    public void write(String utterance, ReadableMap params, Promise promise) {
+        if(notReady(promise)) return;
+
+        if (Build.VERSION.SDK_INT < 21) {
+            promise.reject("not_available", "Android API 21 level or higher is required");
+            return;
+        }
+
+        File file = null;
+        try {
+            file = File.createTempFile("tts-", ".wav", getReactApplicationContext().getCacheDir());
+        } catch (IOException e) {
+            promise.reject("failed_to_create_tmp_file", e.getMessage());
+            return;
+        }
+
+        String utteranceId = Integer.toString(utterance.hashCode());
+        Bundle params1 = new Bundle();
+
+        int writeResult = tts.synthesizeToFile(utterance, params1, file, utteranceId);
+
+        if(writeResult == TextToSpeech.SUCCESS) {
+            WritableMap result = Arguments.createMap();
+            result.putString("utteranceId", utteranceId);
+            result.putString("file", file.getAbsolutePath());
+            promise.resolve(result);
+        } else {
+            resolvePromiseWithStatusCode(writeResult, promise);
         }
     }
 

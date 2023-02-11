@@ -43,14 +43,11 @@ RCT_EXPORT_MODULE()
     return YES;
 }
 
-RCT_EXPORT_METHOD(speak:(NSString *)text
-                  params:(NSDictionary *)params
-                  resolve:(RCTPromiseResolveBlock)resolve
-                  reject:(RCTPromiseRejectBlock)reject)
+- (AVSpeechUtterance*)createUtterance:(NSString *)text params:(NSDictionary *)params resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
 {
     if(!text) {
         reject(@"no_text", @"No text to speak", nil);
-        return;
+        return nil;
     }
 
     AVSpeechUtterance *utterance = [[AVSpeechUtterance alloc] initWithString:text];
@@ -68,7 +65,7 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
             utterance.rate = rate;
         } else {
             reject(@"bad_rate", @"Wrong rate value", nil);
-            return;
+            return nil;
         }
     } else if (_defaultRate) {
         utterance.rate = _defaultRate;
@@ -78,6 +75,20 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
         utterance.pitchMultiplier = _defaultPitch;
     }
 
+    return utterance;
+}
+
+RCT_EXPORT_METHOD(speak:(NSString *)text
+                  params:(NSDictionary *)params
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+    AVSpeechUtterance *utterance = [self createUtterance:text params:params resolve:resolve reject:reject];
+
+    if(utterance == nil) {
+        return;
+    }
+
     if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
         [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
     } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
@@ -85,7 +96,59 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     }
 
     [self.synthesizer speakUtterance:utterance];
+
     resolve([NSNumber numberWithUnsignedLong:utterance.hash]);
+
+
+RCT_EXPORT_METHOD(write:(NSString *)text
+                  params:(NSDictionary *)params
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+    AVSpeechUtterance *utterance = [self createUtterance:text params:params resolve:resolve reject:reject];
+
+    if(utterance == nil) {
+        return;
+    }
+
+    if (@available(iOS 13.0, *)) {
+        NSString *filename = [NSString stringWithFormat:@"%ld.caf", utterance.hash];
+        NSURL *url = [[NSURL alloc] initFileURLWithPath:filename relativeToURL:NSFileManager.defaultManager.temporaryDirectory];
+        __block AVAudioFile *output = nil;
+        __block NSError *error = nil;
+
+        [self.synthesizer writeUtterance:utterance toBufferCallback:^(AVAudioBuffer * _Nonnull buffer) {
+            if(error != nil) {
+                // failed in a previous callback
+                return;
+            }
+
+            if(output == nil) {
+                output = [[AVAudioFile alloc]
+                          initForWriting:url
+                          settings:buffer.format.settings
+                          commonFormat:AVAudioPCMFormatInt16
+                          interleaved:FALSE
+                          error:&error];
+                if(error != nil) {
+                    reject(@"error", @"Failed to create AVAudioFile", error);
+                }
+            }
+
+            [output writeFromBuffer:(AVAudioPCMBuffer *)buffer error:&error];
+
+            if(error != nil) {
+                reject(@"error", @"Failed to write from buffer", error);
+            }
+        }];
+
+        resolve(@{
+            @"utteranceId": [NSNumber numberWithUnsignedLong:utterance.hash],
+            @"file": url.path
+        });
+    } else {
+        reject(@"not_available", @"Only available on IOS 13.0 and later", nil);
+    }
 }
 
 RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
@@ -222,6 +285,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 
     resolve(voices);
 }
+
 
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didStartSpeechUtterance:(AVSpeechUtterance *)utterance
 {

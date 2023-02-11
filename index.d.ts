@@ -99,7 +99,8 @@ export class ReactNativeTts extends RN.NativeEventEmitter {
   voices: () => Promise<Voice[]>;
   engines: () => Promise<Engine[]>;
   /** Read the sentence and return an id for the task. */
-  speak: (utterance: string, options?: Options) => string | number;
+  speak: (utterance: string, options?: Options) => Promise<string | number>;
+  write: (utterance: string, options?: Options) => Promise<{ utteranceId: string | number; file: string; }>;
   stop: (onWordBoundary?: boolean) => Promise<boolean>;
   pause: (onWordBoundary?: boolean) => Promise<boolean>;
   resume: () => Promise<boolean>;
