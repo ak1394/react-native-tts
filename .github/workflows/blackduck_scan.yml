@@ -1,0 +1,47 @@
+name: Blackduck Scan
+on:
+  workflow_dispatch:
+    inputs:
+      project_version:
+        description: Black Duck compliance check for version
+        default:
+        required: true
+        type: string
+
+jobs:
+  oss-compliance:
+    name: OSS Compliance scan
+    runs-on: staging-2c-8gb
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.project_version }}
+
+      - name: Setup Python v3.7
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.7'
+
+      - name: Setup JDK8
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Get project node version
+        run: echo ::set-output name=NODE_VERSION::$(cat .node-version)
+        id: node
+
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ steps.node.outputs.NODE_VERSION }}
+
+      - name: Scan with Black Duck Tools
+        uses: tomtom-internal/blackduck-action@v0
+        env:
+          BLACKDUCK_API_TOKEN: ${{ secrets.BLACKDUCK_TOKEN }}
+        with:
+          name: react-native-tts
+          version: ${{ inputs.project_version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

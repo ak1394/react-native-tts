@@ -1,0 +1,14 @@
+project: react-native-tts
+scan_type:
+  - FULL_SCAN
+include_folders:
+  - android
+  - ios
+exclude_folders:
+  - example
+  - windows
+detectors_included:
+  - NPM
+  - GIT
+passthrough:
+  - --detect.npm.dependency.types.excluded=DEV
