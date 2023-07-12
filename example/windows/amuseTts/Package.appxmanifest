@@ -4,19 +4,18 @@
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
-  xmlns:iot="http://schemas.microsoft.com/appx/manifest/iot/windows10"
-  IgnorableNamespaces="uap mp iot">
+  IgnorableNamespaces="uap mp">
 
   <Identity
-    Name="ReactNativeTtsWinExample"
-    Publisher="CN=Janea"
+    Name="850a9a24-9718-4189-bc22-94659eee0265"
+    Publisher="CN=tatianakapos"
     Version="1.0.0.0" />
 
-  <mp:PhoneIdentity PhoneProductId="ef3cef70-5970-4938-b589-8b41e02b0e7e" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="850a9a24-9718-4189-bc22-94659eee0265" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>amuseTts</DisplayName>
-    <PublisherDisplayName>trita</PublisherDisplayName>
+    <PublisherDisplayName>tatianakapos</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -47,6 +46,5 @@
 
   <Capabilities>
     <Capability Name="internetClient" />
-    <iot:Capability Name="systemManagement"/>
   </Capabilities>
 </Package>
