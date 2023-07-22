@@ -7,6 +7,8 @@ class Tts extends NativeEventEmitter {
     super(TextToSpeech);
   }
 
+  eventSubscription = new Map();
+
   getInitStatus() {
     if (Platform.OS === 'ios' || Platform.OS === 'windows') {
       return Promise.resolve(true);
@@ -116,11 +118,19 @@ class Tts extends NativeEventEmitter {
   }
 
   addEventListener(type, handler) {
-    return this.addListener(type, handler);
+    const uniqueKey = [type, handler];
+    const listener = this.addListener(type, handler);
+    this.eventSubscription.set(uniqueKey, listener);
+    return listener;
   }
 
-  removeEventListener(type, handler) {
-    this.removeListener(type, handler);
+  removeEventListener = (type, handler) => {
+    const uniqueKey = [type, handler];
+    const listener = this.eventSubscription.get(uniqueKey);
+    if (listener) {
+      listener.remove();
+      this.eventSubscription.delete(uniqueKey);
+    }
   }
 }
 
