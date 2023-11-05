@@ -8,12 +8,9 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-    <Grid>
-        <react:ReactRootView 
-            x:Name="ReactRootView"
-            ComponentName="amuseTts"
-            Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-            MinHeight="400"/>
-        <MediaElement x:Name="RNTextToSpeech" AutoPlay="False" />
-    </Grid>
+    <react:ReactRootView 
+        x:Name="ReactRootView"
+        ComponentName="amuseTts"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+        MinHeight="400"/>
 </Page>

@@ -10,11 +10,11 @@ import {
   View,
   Button,
   FlatList,
-  Slider,
   TextInput,
   Keyboard
 } from "react-native";
 import Tts from "react-native-tts";
+import Slider from "@react-native-community/slider";
 
 type Props = {};
 export default class App extends Component<Props> {
