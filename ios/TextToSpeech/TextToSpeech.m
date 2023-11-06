@@ -61,6 +61,18 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     } else if (_defaultVoice) {
         utterance.voice = _defaultVoice;
     }
+    
+    float volume = [[params valueForKey:@"volume"] floatValue];
+    if (volume) {
+        if(volume >= 0 && volume <= 1) {
+            utterance.volume = volume;
+        } else {
+            reject(@"bad_volume", @"Wrong volume value", nil);
+            return;
+        }
+    } else if (_defaultVolume) {
+        utterance.volume = _defaultVolume;
+    }
 
     float rate = [[params valueForKey:@"rate"] floatValue];
     if (rate) {
@@ -181,6 +193,18 @@ RCT_EXPORT_METHOD(setDefaultRate:(float)rate
         resolve(@"success");
     } else {
         reject(@"bad_rate", @"Wrong rate value", nil);
+    }
+}
+
+RCT_EXPORT_METHOD(setDefaultVolume:(float)volume
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+    if(volume >= 0 && volume <= 1) {
+        _defaultVolume = volume;
+        resolve(@"success");
+    } else {
+        reject(@"bad_volume", @"Wrong volume value", nil);
     }
 }
 

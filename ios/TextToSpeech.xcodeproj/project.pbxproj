@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		3A6FB20D1D99E12200593599 /* TextToSpeech.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A6FB20C1D99E12200593599 /* TextToSpeech.m */; };
 		3A6FB20E1D99E12200593599 /* TextToSpeech.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3A6FB20B1D99E12200593599 /* TextToSpeech.h */; };
+		624AB8EBA8B6353387FD2929 /* libPods-TextToSpeech.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1579008D29467247321F5733 /* libPods-TextToSpeech.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,9 +26,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1579008D29467247321F5733 /* libPods-TextToSpeech.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TextToSpeech.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A6FB2081D99E12200593599 /* libTextToSpeech.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libTextToSpeech.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A6FB20B1D99E12200593599 /* TextToSpeech.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TextToSpeech.h; sourceTree = "<group>"; };
 		3A6FB20C1D99E12200593599 /* TextToSpeech.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TextToSpeech.m; sourceTree = "<group>"; };
+		5ABC6C03028F06FC9B41B8C0 /* Pods-TextToSpeech.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TextToSpeech.release.xcconfig"; path = "Target Support Files/Pods-TextToSpeech/Pods-TextToSpeech.release.xcconfig"; sourceTree = "<group>"; };
+		897FD749AAD8936FE9F04125 /* Pods-TextToSpeech.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TextToSpeech.debug.xcconfig"; path = "Target Support Files/Pods-TextToSpeech/Pods-TextToSpeech.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,17 +39,30 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				624AB8EBA8B6353387FD2929 /* libPods-TextToSpeech.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		19FED172E31613803521C7F8 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				897FD749AAD8936FE9F04125 /* Pods-TextToSpeech.debug.xcconfig */,
+				5ABC6C03028F06FC9B41B8C0 /* Pods-TextToSpeech.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		3A6FB1FF1D99E12200593599 = {
 			isa = PBXGroup;
 			children = (
 				3A6FB20A1D99E12200593599 /* TextToSpeech */,
 				3A6FB2091D99E12200593599 /* Products */,
+				19FED172E31613803521C7F8 /* Pods */,
+				B4332D6155AE7B7F0CE4E26D /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -66,6 +83,14 @@
 			path = TextToSpeech;
 			sourceTree = "<group>";
 		};
+		B4332D6155AE7B7F0CE4E26D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1579008D29467247321F5733 /* libPods-TextToSpeech.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -73,6 +98,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3A6FB2111D99E12200593599 /* Build configuration list for PBXNativeTarget "TextToSpeech" */;
 			buildPhases = (
+				2A13360D73A79CE60353C273 /* [CP] Check Pods Manifest.lock */,
 				3A6FB2041D99E12200593599 /* Sources */,
 				3A6FB2051D99E12200593599 /* Frameworks */,
 				3A6FB2061D99E12200593599 /* CopyFiles */,
@@ -118,6 +144,31 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		2A13360D73A79CE60353C273 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-TextToSpeech-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		3A6FB2041D99E12200593599 /* Sources */ = {
@@ -221,6 +272,7 @@
 		};
 		3A6FB2121D99E12200593599 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 897FD749AAD8936FE9F04125 /* Pods-TextToSpeech.debug.xcconfig */;
 			buildSettings = {
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
@@ -236,6 +288,7 @@
 		};
 		3A6FB2131D99E12200593599 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5ABC6C03028F06FC9B41B8C0 /* Pods-TextToSpeech.release.xcconfig */;
 			buildSettings = {
 				DEVELOPMENT_TEAM = "";
 				HEADER_SEARCH_PATHS = (
