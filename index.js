@@ -80,7 +80,7 @@ class Tts extends NativeEventEmitter {
     // compatibility with old-style voiceId argument passing
     if (typeof options === 'string') {
       if (Platform.OS === 'ios') {
-        return TextToSpeech.speak(utterance, { iosVoiceId: options });
+        return TextToSpeech.speak(utterance, options.iosParams || {});
       } else {
         return TextToSpeech.speak(utterance, {});
       }

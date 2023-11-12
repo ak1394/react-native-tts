@@ -77,11 +77,19 @@ export type AndroidOptions = {
   KEY_PARAM_PAN: number;
 };
 
+export type IosOptions = {
+  /** Parameter to specify which voice to use, check voices() for available values. */
+  iosVoiceId: string;
+  /** Parameter to specify which speech rate this line should be spoken with. Will override default rate if set for this utterance. */
+  rate: number;
+  /** Parameter key to specify the audio hardware output of the TTS. */
+  audioOutput: "speaker" | "earpiece";
+}
+
 export type Options =
   | string
   | {
-      iosVoiceId: string;
-      rate: number;
+      iosParams: IosOptions;
       androidParams: AndroidOptions;
     };
 

@@ -56,6 +56,7 @@ Additionally, speak() allows to pass platform-specific options.
 Tts.speak('Hello, world!', {
   iosVoiceId: 'com.apple.ttsbundle.Moira-compact',
   rate: 0.5,
+  audioOutput: 'speaker',
 });
 // Android
 Tts.speak('Hello, world!', {
@@ -79,6 +80,8 @@ The supported options for IOS are:
 
 - `iosVoiceId` which voice to use, check [voices()](#list-voices) for available values
 - `rate` which speech rate this line should be spoken with. Will override [default rate](#set-default-speech-rate) if set for this utterance.
+
+- `audioOutput` you can use either `earpiece` or `speaker`. Default one is `speaker`. To enable the earpiece you need to set `Tts.setIgnoreSilentSwitch("ignore");`
 
 Stop speaking and flush the TTS queue.
 

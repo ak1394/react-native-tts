@@ -52,17 +52,19 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
         reject(@"no_text", @"No text to speak", nil);
         return;
     }
+    
+    NSDictionary *iosParams = [params valueForKey:@"iosParams"];
 
     AVSpeechUtterance *utterance = [[AVSpeechUtterance alloc] initWithString:text];
 
-    NSString* voice = [params valueForKey:@"iosVoiceId"];
+    NSString* voice = [iosParams valueForKey:@"iosVoiceId"];
     if (voice) {
         utterance.voice = [AVSpeechSynthesisVoice voiceWithIdentifier:voice];
     } else if (_defaultVoice) {
         utterance.voice = _defaultVoice;
     }
 
-    float rate = [[params valueForKey:@"rate"] floatValue];
+    float rate = [[iosParams valueForKey:@"rate"] floatValue];
     if (rate) {
         if(rate > AVSpeechUtteranceMinimumSpeechRate && rate < AVSpeechUtteranceMaximumSpeechRate) {
             utterance.rate = rate;
@@ -79,10 +81,20 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     }
 
     if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
-        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord error:nil];
     } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
         [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
     }
+    
+    NSString *audioOutput = [iosParams valueForKey:@"audioOutput"];
+    if (audioOutput) {
+        if([audioOutput isEqualToString:@"speaker"]) {
+            [[AVAudioSession sharedInstance] overrideOutputAudioPort:(AVAudioSessionPortOverrideSpeaker) error:nil];
+        } else if([audioOutput isEqualToString:@"earpiece"]) {
+            [[AVAudioSession sharedInstance] overrideOutputAudioPort:(AVAudioSessionPortOverrideNone) error:nil];
+        }
+    }
+
 
     [self.synthesizer speakUtterance:utterance];
     resolve([NSNumber numberWithUnsignedLong:utterance.hash]);
