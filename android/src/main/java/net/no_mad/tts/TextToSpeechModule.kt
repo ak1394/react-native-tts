@@ -440,13 +440,13 @@ class TextToSpeechModule(reactContext: ReactApplicationContext) : ReactContextBa
     }
 
     @ReactMethod
-    fun addListener(eventName: String, handler: Callback) {
+    fun addListener(eventName: String) {
         // Implement your logic to add the listener
         // You can store the handler in a Map or List if necessary
     }
 
     @ReactMethod
-    fun removeListener(eventName: String, handler: Callback) {
+    fun removeListener(eventName: String) {
         // Implement your logic to remove the listener
         // You can remove the handler from the Map or List if necessary
     }
