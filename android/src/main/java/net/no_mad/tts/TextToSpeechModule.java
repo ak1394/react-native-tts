@@ -15,6 +15,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import com.facebook.react.bridge.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.facebook.react.bridge.Callback;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -527,23 +528,26 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
 
     /**
-    *
-    * Update to React Native 0.74.2
-    *
-    */
+     *
+     * Update to React Native 0.74.2
+     *
+     */
     
     @ReactMethod
     public void removeListeners(Integer count) {
         // Keep: Required for RN built in Event Emitter Calls.
     }
-
+    
     @ReactMethod
-    public void addListener(String eventName) {
-        // Keep: Required for RN built in Event Emitter Calls.
+    public void addListener(String eventName, Callback handler) {
+        // Implement your logic to add the listener
+        // You can store the handler in a Map or List if necessary
     }
     
     @ReactMethod
-    public void removeListener(String eventName) {
-        // Keep: Required for RN built in Event Emitter Calls.
+    public void removeListener(String eventName, Callback handler) {
+        // Implement your logic to remove the listener
+        // You can remove the handler from the Map or List if necessary
     }
+
 }
