@@ -525,6 +525,12 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, params);
     }
+
+    /**
+    *
+    * Update to React Native 0.74.2
+    *
+    */
     
     @ReactMethod
     public void removeListeners(Integer count) {
@@ -533,6 +539,11 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void addListener(String eventName) {
+        // Keep: Required for RN built in Event Emitter Calls.
+    }
+    
+    @ReactMethod
+    public void removeListener(String eventName) {
         // Keep: Required for RN built in Event Emitter Calls.
     }
 }
