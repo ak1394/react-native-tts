@@ -15,7 +15,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import com.facebook.react.bridge.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.facebook.react.bridge.Callback;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -539,13 +538,13 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     }
     
     @ReactMethod
-    public void addListener(String eventName, Callback handler) {
+    public void addListener(String eventName) {
         // Implement your logic to add the listener
         // You can store the handler in a Map or List if necessary
     }
     
     @ReactMethod
-    public void removeListener(String eventName, Callback handler) {
+    public void removeListener(String eventName) {
         // Implement your logic to remove the listener
         // You can remove the handler from the Map or List if necessary
     }
