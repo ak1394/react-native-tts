@@ -79,7 +79,13 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     }
 
     if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
-        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+        [[AVAudioSession sharedInstance]
+         setCategory:AVAudioSessionCategoryPlayback
+         mode:AVAudioSessionModeVoicePrompt
+         // This will pause a spoken audio like podcast or audiobook and duck the volume for music
+         options:AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
+         error:nil
+        ];
     } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
         [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
     }
