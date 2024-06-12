@@ -1,2 +1,4 @@
 .github/
 example/
+android/.gradle/
+android/build/
