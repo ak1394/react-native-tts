@@ -7,29 +7,39 @@
     "start": "node node_modules/react-native/local-cli/cli.js start",
     "test": "jest",
     "test:windows": "yarn jest --setupFiles=./jest-setups/jest.setup.windows.js --runInBand",
-    "test:windows_nosound_ci": "yarn jest __tests__/TestTTSInit.test.js --setupFiles=./jest-setups/jest.setup.windows.js"
+    "test:windows_nosound_ci": "yarn jest __tests__/TestTTSInit.test.js --setupFiles=./jest-setups/jest.setup.windows.js",
+    "windows": "react-native run-windows"
   },
   "dependencies": {
-    "react": "16.13.1",
-    "react-native": "0.63.4",
+    "@react-native-community/slider": "^4.4.2",
+    "react": "18.2.0",
+    "react-native": "0.72.0",
     "react-native-tts": "../",
-    "react-native-windows": "^0.63.0-0"
+    "react-native-windows": "0.72.1"
   },
   "devDependencies": {
     "appium": "1.18.3",
     "babel-jest": "^26.6.3",
     "jest": "23.1.0",
+    "metro-config": "^0.76.5",
     "metro-react-native-babel-preset": "^0.64.0",
     "react-test-renderer": "16.3.1",
     "selenium-appium": "0.0.15",
     "selenium-webdriver": "^4.0.0-alpha.8"
   },
-	"jest": {
-		"preset": "react-native",
-		"transform": {
-			"^.+\\.jsx?$": "<rootDir>/node_modules/react-native/jest/preprocessor.js"
-		},
-		"testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
-		"moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"]
-	}
+  "jest": {
+    "preset": "react-native",
+    "transform": {
+      "^.+\\.jsx?$": "<rootDir>/node_modules/react-native/jest/preprocessor.js"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
+  }
 }
