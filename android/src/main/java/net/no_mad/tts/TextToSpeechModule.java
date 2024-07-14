@@ -3,6 +3,7 @@ package net.no_mad.tts;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.content.Intent;
 import android.content.ActivityNotFoundException;
 import android.app.Activity;
@@ -63,6 +64,19 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override
                 public void onStart(String utteranceId) {
+                    if (ducking) {
+                        // Request audio focus for playback
+                        int amResult = audioManager.requestAudioFocus(afChangeListener,
+                                // Use the music stream.
+                                AudioManager.STREAM_MUSIC,
+                                // Request permanent focus.
+                                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+
+                        if (amResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                            Log.w("RNTTS", "Android AudioManager error, failed to request audio focus");
+                            return;
+                        }
+                    }
                     sendEvent("tts-start", utteranceId);
                 }
 
@@ -208,20 +222,6 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void speak(String utterance, ReadableMap params, Promise promise) {
         if(notReady(promise)) return;
-
-        if(ducking) {
-            // Request audio focus for playback
-            int amResult = audioManager.requestAudioFocus(afChangeListener,
-                                                          // Use the music stream.
-                                                          AudioManager.STREAM_MUSIC,
-                                                          // Request permanent focus.
-                                                          AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
-
-            if(amResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                promise.reject("Android AudioManager error, failed to request audio focus");
-                return;
-            }
-        }
 
         String utteranceId = Integer.toString(utterance.hashCode());
 
