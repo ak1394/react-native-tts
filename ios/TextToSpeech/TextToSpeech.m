@@ -218,12 +218,21 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
     NSMutableArray *voices = [NSMutableArray new];
 
     for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
-        [voices addObject:@{
-            @"id": voice.identifier,
-            @"name": voice.name,
-            @"language": voice.language,
-            @"quality": (voice.quality == AVSpeechSynthesisVoiceQualityEnhanced) ? @500 : @300
-        }];
+        if (@available(iOS 16.0, *)) {
+            [voices addObject:@{
+                @"id": voice.identifier,
+                @"name": voice.name,
+                @"language": voice.language,
+                @"quality": (voice.quality == AVSpeechSynthesisVoiceQualityEnhanced) ? @500 : (voice.quality == AVSpeechSynthesisVoiceQualityPremium) ? @800 : @300
+            }];
+        } else {
+            [voices addObject:@{
+                @"id": voice.identifier,
+                @"name": voice.name,
+                @"language": voice.language,
+                @"quality": (voice.quality == AVSpeechSynthesisVoiceQualityEnhanced) ? @500 : @300
+            }];
+        }
     }
 
     resolve(voices);
