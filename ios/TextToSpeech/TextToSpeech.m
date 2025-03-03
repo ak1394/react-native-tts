@@ -38,9 +38,9 @@ RCT_EXPORT_MODULE()
     return self;
 }
 
-+ (BOOL)requiresMainQueueSetup
++ (bool)requiresMainQueueSetup
 {
-    return YES;
+    return true;
 }
 
 RCT_EXPORT_METHOD(speak:(NSString *)text
@@ -94,7 +94,7 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     resolve([NSNumber numberWithUnsignedLong:utterance.hash]);
 }
 
-RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(stop:(bool *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary boundary;
 
@@ -104,12 +104,12 @@ RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)re
         boundary = AVSpeechBoundaryImmediate;
     }
 
-    BOOL stopped = [self.synthesizer stopSpeakingAtBoundary:boundary];
+    bool stopped = [self.synthesizer stopSpeakingAtBoundary:boundary];
 
     resolve([NSNumber numberWithBool:stopped]);
 }
 
-RCT_EXPORT_METHOD(pause:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(pause:(bool *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary boundary;
 
@@ -119,20 +119,20 @@ RCT_EXPORT_METHOD(pause:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)r
         boundary = AVSpeechBoundaryImmediate;
     }
 
-    BOOL paused = [self.synthesizer pauseSpeakingAtBoundary:boundary];
+    bool paused = [self.synthesizer pauseSpeakingAtBoundary:boundary];
 
     resolve([NSNumber numberWithBool:paused]);
 }
 
 RCT_EXPORT_METHOD(resume:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
-    BOOL continued = [self.synthesizer continueSpeaking];
+    bool continued = [self.synthesizer continueSpeaking];
 
     resolve([NSNumber numberWithBool:continued]);
 }
 
 
-RCT_EXPORT_METHOD(setDucking:(BOOL *)ducking
+RCT_EXPORT_METHOD(setDucking:(bool *)ducking
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
@@ -178,7 +178,7 @@ RCT_EXPORT_METHOD(setDefaultVoice:(NSString *)identifier
 }
 
 RCT_EXPORT_METHOD(setDefaultRate:(float)rate
-                  skipTransform:(BOOL *)skipTransform // not used, compatibility with Android native module signature
+                  skipTransform:(bool *)skipTransform // not used, compatibility with Android native module signature
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {
@@ -232,7 +232,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didStartSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:YES error:nil];
+        [[AVAudioSession sharedInstance] setActive:true error:nil];
     }
 
     [self sendEventWithName:@"tts-start" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
@@ -241,7 +241,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didFinishSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+        [[AVAudioSession sharedInstance] setActive:false error:nil];
     }
 
     [self sendEventWithName:@"tts-finish" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
@@ -250,7 +250,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didPauseSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+        [[AVAudioSession sharedInstance] setActive:false error:nil];
     }
 
     [self sendEventWithName:@"tts-pause" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
@@ -259,7 +259,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didContinueSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:YES error:nil];
+        [[AVAudioSession sharedInstance] setActive:true error:nil];
     }
 
     [self sendEventWithName:@"tts-resume" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
@@ -276,7 +276,7 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didCancelSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+        [[AVAudioSession sharedInstance] setActive:false error:nil];
     }
 
     [self sendEventWithName:@"tts-cancel" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
