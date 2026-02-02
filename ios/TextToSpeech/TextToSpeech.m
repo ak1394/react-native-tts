@@ -12,6 +12,9 @@
 
 #import "TextToSpeech.h"
 
+// Singleton instance for New Architecture compatibility
+static TextToSpeech *_sharedInstance = nil;
+
 @implementation TextToSpeech {
     NSString * _ignoreSilentSwitch;
 }
@@ -20,6 +23,11 @@
 
 RCT_EXPORT_MODULE()
 
++ (instancetype)sharedInstance
+{
+    return _sharedInstance;
+}
+
 -(NSArray<NSString *> *)supportedEvents
 {
     return @[@"tts-start", @"tts-finish", @"tts-pause", @"tts-resume", @"tts-progress", @"tts-cancel"];
@@ -27,20 +35,27 @@ RCT_EXPORT_MODULE()
 
 -(instancetype)init
 {
+    // If we already have a shared instance, return it instead of creating a new one
+    // This ensures singleton behavior in React Native New Architecture
+    if (_sharedInstance != nil) {
+        return _sharedInstance;
+    }
+    
     self = [super init];
     if (self) {
         _synthesizer = [AVSpeechSynthesizer new];
         _synthesizer.delegate = self;
         _ducking = false;
         _ignoreSilentSwitch = @"inherit"; // inherit, ignore, obey
+        _sharedInstance = self;
     }
 
     return self;
 }
 
-+ (BOOL)requiresMainQueueSetup
++ (bool)requiresMainQueueSetup
 {
-    return YES;
+    return true;
 }
 
 RCT_EXPORT_METHOD(speak:(NSString *)text
@@ -79,11 +94,16 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     }
 
     if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
+        // Build options based on ducking setting
+        AVAudioSessionCategoryOptions options = AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers;
+        if (_ducking) {
+            options |= AVAudioSessionCategoryOptionDuckOthers;
+        }
+        
         [[AVAudioSession sharedInstance]
          setCategory:AVAudioSessionCategoryPlayback
          mode:AVAudioSessionModeVoicePrompt
-         // This will pause a spoken audio like podcast or audiobook and duck the volume for music
-         options:AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
+         options:options
          error:nil
         ];
     } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
@@ -94,7 +114,7 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     resolve([NSNumber numberWithUnsignedLong:utterance.hash]);
 }
 
-RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(stop:(bool *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary boundary;
 
@@ -104,12 +124,12 @@ RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)re
         boundary = AVSpeechBoundaryImmediate;
     }
 
-    BOOL stopped = [self.synthesizer stopSpeakingAtBoundary:boundary];
+    bool stopped = [self.synthesizer stopSpeakingAtBoundary:boundary];
 
     resolve([NSNumber numberWithBool:stopped]);
 }
 
-RCT_EXPORT_METHOD(pause:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(pause:(bool *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary boundary;
 
@@ -119,35 +139,35 @@ RCT_EXPORT_METHOD(pause:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)r
         boundary = AVSpeechBoundaryImmediate;
     }
 
-    BOOL paused = [self.synthesizer pauseSpeakingAtBoundary:boundary];
+    bool paused = [self.synthesizer pauseSpeakingAtBoundary:boundary];
 
     resolve([NSNumber numberWithBool:paused]);
 }
 
 RCT_EXPORT_METHOD(resume:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
-    BOOL continued = [self.synthesizer continueSpeaking];
+    bool continued = [self.synthesizer continueSpeaking];
 
     resolve([NSNumber numberWithBool:continued]);
 }
 
 
-RCT_EXPORT_METHOD(setDucking:(BOOL *)ducking
+RCT_EXPORT_METHOD(setDucking:(BOOL)ducking
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
-    _ducking = ducking;
+    _ducking = (bool)ducking;
 
     if(ducking) {
         AVAudioSession *session = [AVAudioSession sharedInstance];
         [session setCategory:AVAudioSessionCategoryPlayback
-                 withOptions:AVAudioSessionCategoryOptionDuckOthers
+                        mode:AVAudioSessionModeVoicePrompt
+                     options:(AVAudioSessionCategoryOptionDuckOthers|AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers)
                        error:nil];
     }
 
     resolve(@"success");
 }
-
 
 RCT_EXPORT_METHOD(setDefaultLanguage:(NSString *)language
                   resolve:(RCTPromiseResolveBlock)resolve
@@ -178,7 +198,7 @@ RCT_EXPORT_METHOD(setDefaultVoice:(NSString *)identifier
 }
 
 RCT_EXPORT_METHOD(setDefaultRate:(float)rate
-                  skipTransform:(BOOL *)skipTransform // not used, compatibility with Android native module signature
+                  skipTransform:(bool *)skipTransform // not used, compatibility with Android native module signature
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {
@@ -212,18 +232,40 @@ RCT_EXPORT_METHOD(setIgnoreSilentSwitch:(NSString *)ignoreSilentSwitch
     }
 }
 
+RCT_EXPORT_METHOD(getDefaultVoiceIdentifier:(NSString *)language
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+    AVSpeechSynthesisVoice *voice = [AVSpeechSynthesisVoice voiceWithLanguage:language];
+
+    if(voice) {
+        resolve(voice.identifier);
+    } else {
+        reject(@"not_found", @"Language not found", nil);
+    }
+}
+
 RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
     NSMutableArray *voices = [NSMutableArray new];
 
     for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
-        [voices addObject:@{
-            @"id": voice.identifier,
-            @"name": voice.name,
-            @"language": voice.language,
-            @"quality": (voice.quality == AVSpeechSynthesisVoiceQualityEnhanced) ? @500 : @300
-        }];
+        if (@available(iOS 16.0, *)) {
+            [voices addObject:@{
+                @"id": voice.identifier,
+                @"name": voice.name,
+                @"language": voice.language,
+                @"quality": (voice.quality == AVSpeechSynthesisVoiceQualityEnhanced) ? @500 : (voice.quality == AVSpeechSynthesisVoiceQualityPremium) ? @800 : @300
+            }];
+        } else {
+            [voices addObject:@{
+                @"id": voice.identifier,
+                @"name": voice.name,
+                @"language": voice.language,
+                @"quality": (voice.quality == AVSpeechSynthesisVoiceQualityEnhanced) ? @500 : @300
+            }];
+        }
     }
 
     resolve(voices);
@@ -232,7 +274,9 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didStartSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:YES error:nil];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            [[AVAudioSession sharedInstance] setActive:true error:nil];
+        });
     }
 
     [self sendEventWithName:@"tts-start" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
@@ -241,7 +285,9 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didFinishSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            [[AVAudioSession sharedInstance] setActive:false error:nil];
+        });
     }
 
     [self sendEventWithName:@"tts-finish" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
@@ -250,7 +296,9 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didPauseSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            [[AVAudioSession sharedInstance] setActive:false error:nil];
+        });
     }
 
     [self sendEventWithName:@"tts-pause" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
@@ -259,7 +307,9 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didContinueSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:YES error:nil];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            [[AVAudioSession sharedInstance] setActive:true error:nil];
+        });
     }
 
     [self sendEventWithName:@"tts-resume" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];
@@ -276,7 +326,9 @@ RCT_EXPORT_METHOD(voices:(RCTPromiseResolveBlock)resolve
 -(void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didCancelSpeechUtterance:(AVSpeechUtterance *)utterance
 {
     if(_ducking) {
-        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            [[AVAudioSession sharedInstance] setActive:false error:nil];
+        });
     }
 
     [self sendEventWithName:@"tts-cancel" body:@{@"utteranceId":[NSNumber numberWithUnsignedLong:utterance.hash]}];

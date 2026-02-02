@@ -17,4 +17,7 @@
 @property (nonatomic) float defaultRate;
 @property (nonatomic) float defaultPitch;
 @property (nonatomic) bool ducking;
+
+// Singleton accessor for New Architecture compatibility
++ (instancetype)sharedInstance;
 @end

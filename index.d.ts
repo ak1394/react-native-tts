@@ -62,7 +62,7 @@ export type Engine = {
 
 export type AndroidOptions = {
   /** Parameter key to specify the audio stream type to be used when speaking text or playing back a file */
-  KEY_PARAM_STREAM:
+  KEY_PARAM_STREAM?:
     | "STREAM_VOICE_CALL"
     | "STREAM_SYSTEM"
     | "STREAM_RING"
@@ -72,17 +72,17 @@ export type AndroidOptions = {
     | "STREAM_DTMF"
     | "STREAM_ACCESSIBILITY";
   /** Parameter key to specify the speech volume relative to the current stream type volume used when speaking text. Volume is specified as a float ranging from 0 to 1 where 0 is silence, and 1 is the maximum volume (the default behavior). */
-  KEY_PARAM_VOLUME: number;
+  KEY_PARAM_VOLUME?: number;
   /** Parameter key to specify how the speech is panned from left to right when speaking text. Pan is specified as a float ranging from -1 to +1 where -1 maps to a hard-left pan, 0 to center (the default behavior), and +1 to hard-right. */
-  KEY_PARAM_PAN: number;
+  KEY_PARAM_PAN?: number;
 };
 
 export type Options =
   | string
   | {
-      iosVoiceId: string;
-      rate: number;
-      androidParams: AndroidOptions;
+      iosVoiceId?: string;
+      rate?: number;
+      androidParams?: AndroidOptions;
     };
 
 export class ReactNativeTts extends RN.NativeEventEmitter {
@@ -97,9 +97,10 @@ export class ReactNativeTts extends RN.NativeEventEmitter {
   setDefaultLanguage: (language: string) => Promise<"success">;
   setIgnoreSilentSwitch: (ignoreSilentSwitch: IOSSilentSwitchBehavior) => Promise<boolean>;
   voices: () => Promise<Voice[]>;
+  getDefaultVoiceIdentifier: (language: String) => Promise<String>;
   engines: () => Promise<Engine[]>;
   /** Read the sentence and return an id for the task. */
-  speak: (utterance: string, options?: Options) => string | number;
+  speak: (utterance: string, options?: Options) => Promise<string | number>;
   stop: (onWordBoundary?: boolean) => Promise<boolean>;
   pause: (onWordBoundary?: boolean) => Promise<boolean>;
   resume: () => Promise<boolean>;

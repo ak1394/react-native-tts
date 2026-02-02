@@ -1,19 +1,28 @@
 package net.no_mad.tts;
 
-import android.media.AudioManager;
-import android.os.Build;
-import android.os.Bundle;
-import android.content.Intent;
 import android.content.ActivityNotFoundException;
-import android.app.Activity;
-import android.net.Uri;
-import android.speech.tts.TextToSpeech;
-import android.speech.tts.UtteranceProgressListener;
-import android.speech.tts.Voice;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
-import com.facebook.react.bridge.*;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
+import android.speech.tts.Voice;
+
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Promise;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.ArrayList;
@@ -29,14 +38,21 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
 
     private boolean ducking = false;
     private AudioManager audioManager;
-    private AudioManager.OnAudioFocusChangeListener afChangeListener;
+    private AudioManager.OnAudioFocusChangeListener afChangeListener = i -> {};
 
     private Map<String, Locale> localeCountryMap;
     private Map<String, Locale> localeLanguageMap;
 
+    private AudioAttributes audioAttributes;
+
     public TextToSpeechModule(ReactApplicationContext reactContext) {
         super(reactContext);
         audioManager = (AudioManager) reactContext.getApplicationContext().getSystemService(reactContext.AUDIO_SERVICE);
+        audioAttributes = new AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                .build();
+
         initStatusPromises = new ArrayList<Promise>();
         //initialize ISO3, ISO2 languague country code mapping.
         initCountryLanguageCodeMapping();
@@ -97,6 +113,7 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
                     params.putInt("start", start);
                     params.putInt("end", end);
                     params.putInt("frame", frame);
+                    params.putInt("length", end - start);
                     sendEvent("tts-progress", params);
                 }
             });
@@ -210,12 +227,23 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         if(notReady(promise)) return;
 
         if(ducking) {
+            int amResult;
             // Request audio focus for playback
-            int amResult = audioManager.requestAudioFocus(afChangeListener,
-                                                          // Use the music stream.
-                                                          AudioManager.STREAM_MUSIC,
-                                                          // Request permanent focus.
-                                                          AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                AudioFocusRequest audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                        .setAudioAttributes(audioAttributes)
+                        .setAcceptsDelayedFocusGain(false)
+                        .setOnAudioFocusChangeListener(afChangeListener)
+                        .build();
+
+                amResult = audioManager.requestAudioFocus(audioFocusRequest);
+            } else {
+                amResult = audioManager.requestAudioFocus(afChangeListener,
+                        // Use the music stream.
+                        AudioManager.STREAM_MUSIC,
+                        // Request permanent focus.
+                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+            }
 
             if(amResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                 promise.reject("Android AudioManager error, failed to request audio focus");
@@ -309,6 +337,18 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
         } else {
             promise.reject("not_available", "Android API 21 level or higher is required");
         }
+    }
+
+    @ReactMethod
+    public void getDefaultVoiceIdentifier(String language, Promise promise) {
+        if(notReady(promise)) return;
+
+        Voice currentVoice = tts.getVoice();
+        if (currentVoice == null) {
+            promise.reject("not_found", "Language not found");
+            return;
+        }
+        promise.resolve(currentVoice.getName());
     }
 
     @ReactMethod
@@ -497,6 +537,8 @@ public class TextToSpeechModule extends ReactContextBaseJavaModule {
             default:
                 audioStreamType = AudioManager.USE_DEFAULT_STREAM_TYPE;
         }
+
+        tts.setAudioAttributes(audioAttributes);
 
         if (Build.VERSION.SDK_INT >= 21) {
             Bundle params = new Bundle();

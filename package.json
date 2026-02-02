@@ -1,11 +1,11 @@
 {
-  "name": "react-native-tts",
-  "version": "4.1.1",
+  "name": "@iternio/react-native-tts",
+  "version": "4.1.3",
   "description": "React Native Text-To-Speech module for Android and iOS",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ak1394/react-native-tts.git"
+    "url": "git+https://github.com/Iternio-Planning-AB/react-native-tts.git"
   },
   "keywords": [
     "tts",
@@ -17,10 +17,11 @@
     "android",
     "ios"
   ],
-  "author": "Anton Krasovsky",
+  "author": "Manuel Auer <g4rb4g3@gmail.com> (https://github.com/g4rb4g3)",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ak1394/react-native-tts/issues"
-  },
-  "homepage": "https://github.com/ak1394/react-native-tts#readme"
+  "homepage": "https://github.com/Iternio-Planning-AB/react-native-tts#readme",
+    "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  }
 }
