@@ -82,7 +82,6 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
         [[AVAudioSession sharedInstance]
          setCategory:AVAudioSessionCategoryPlayback
          mode:AVAudioSessionModeVoicePrompt
-         // This will pause a spoken audio like podcast or audiobook and duck the volume for music
          options:AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
          error:nil
         ];
@@ -94,11 +93,11 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     resolve([NSNumber numberWithUnsignedLong:utterance.hash]);
 }
 
-RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(stop:(BOOL)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary boundary;
 
-    if(onWordBoundary != NULL && onWordBoundary) {
+    if(onWordBoundary) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;
@@ -109,11 +108,11 @@ RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)re
     resolve([NSNumber numberWithBool:stopped]);
 }
 
-RCT_EXPORT_METHOD(pause:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(pause:(BOOL)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary boundary;
 
-    if(onWordBoundary != NULL && onWordBoundary) {
+    if(onWordBoundary) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;
@@ -131,8 +130,7 @@ RCT_EXPORT_METHOD(resume:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPro
     resolve([NSNumber numberWithBool:continued]);
 }
 
-
-RCT_EXPORT_METHOD(setDucking:(BOOL *)ducking
+RCT_EXPORT_METHOD(setDucking:(BOOL)ducking
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
@@ -147,7 +145,6 @@ RCT_EXPORT_METHOD(setDucking:(BOOL *)ducking
 
     resolve(@"success");
 }
-
 
 RCT_EXPORT_METHOD(setDefaultLanguage:(NSString *)language
                   resolve:(RCTPromiseResolveBlock)resolve
@@ -178,7 +175,7 @@ RCT_EXPORT_METHOD(setDefaultVoice:(NSString *)identifier
 }
 
 RCT_EXPORT_METHOD(setDefaultRate:(float)rate
-                  skipTransform:(BOOL *)skipTransform // not used, compatibility with Android native module signature
+                  skipTransform:(BOOL)skipTransform
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {
