@@ -94,11 +94,11 @@ RCT_EXPORT_METHOD(speak:(NSString *)text
     resolve([NSNumber numberWithUnsignedLong:utterance.hash]);
 }
 
-RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(stop:(NSNumber *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary boundary;
 
-    if(onWordBoundary != NULL && onWordBoundary) {
+    if(onWordBoundary != nil && [onWordBoundary boolValue]) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;
@@ -109,11 +109,11 @@ RCT_EXPORT_METHOD(stop:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)re
     resolve([NSNumber numberWithBool:stopped]);
 }
 
-RCT_EXPORT_METHOD(pause:(BOOL *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(pause:(NSNumber *)onWordBoundary resolve:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
 {
     AVSpeechBoundary boundary;
 
-    if(onWordBoundary != NULL && onWordBoundary) {
+    if(onWordBoundary != nil && [onWordBoundary boolValue]) {
         boundary = AVSpeechBoundaryWord;
     } else {
         boundary = AVSpeechBoundaryImmediate;
@@ -132,13 +132,13 @@ RCT_EXPORT_METHOD(resume:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPro
 }
 
 
-RCT_EXPORT_METHOD(setDucking:(BOOL *)ducking
+RCT_EXPORT_METHOD(setDucking:(NSNumber *)ducking
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(__unused RCTPromiseRejectBlock)reject)
 {
-    _ducking = ducking;
+    _ducking = ducking != nil ? [ducking boolValue] : NO;
 
-    if(ducking) {
+    if(_ducking) {
         AVAudioSession *session = [AVAudioSession sharedInstance];
         [session setCategory:AVAudioSessionCategoryPlayback
                  withOptions:AVAudioSessionCategoryOptionDuckOthers
@@ -178,7 +178,7 @@ RCT_EXPORT_METHOD(setDefaultVoice:(NSString *)identifier
 }
 
 RCT_EXPORT_METHOD(setDefaultRate:(float)rate
-                  skipTransform:(BOOL *)skipTransform // not used, compatibility with Android native module signature
+                  skipTransform:(NSNumber *)skipTransform // not used, compatibility with Android native module signature
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {
